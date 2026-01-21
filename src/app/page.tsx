@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { updateTopic } from "./actions";
 import { NextPostTimer } from "./NextPostTimer";
+import { ManualTrigger } from "./ManualTrigger";
 
 export default async function Home() {
   const config = await prisma.config.findUnique({
@@ -54,14 +55,8 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Manual Trigger (Client-side would be better but simple link works for now or just info) */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4">Testing</h2>
-          <p className="text-gray-600 mb-4">To trigger a post manually, visit this URL (requires force=true if local/no secret):</p>
-          <a href="/api/cron?force=true" target="_blank" className="text-indigo-600 hover:text-indigo-800 underline">
-            Trigger Manual Post
-          </a>
-        </div>
+        {/* Manual Trigger Component */}
+        <ManualTrigger />
 
         {/* Recent Posts Log */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
