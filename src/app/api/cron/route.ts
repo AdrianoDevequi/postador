@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { generateCaption, generateImagePrompt } from "@/lib/gemini";
 import { generateImageUrl } from "@/lib/image";
