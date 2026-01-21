@@ -11,10 +11,15 @@ export async function GET(request: Request) {
         const force = searchParams.get("force") === "true";
 
         // Check for authorization (simple check)
+        // Check for authorization (simple check)
         const authHeader = request.headers.get("authorization");
         const isVercelCron = request.headers.get("x-vercel-cron") === "1";
 
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && !force && !isVercelCron) {
+        // Check for Admin Cookie (for Manual Trigger from Dashboard)
+        const cookieStore = await cookies();
+        const isAdmin = cookieStore.get("admin_session")?.value === process.env.ADMIN_PASSWORD;
+
+        if (!isAdmin && authHeader !== `Bearer ${process.env.CRON_SECRET}` && !force && !isVercelCron) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
