@@ -22,7 +22,8 @@ export function middleware(request: NextRequest) {
     }
 
     // 3. Protect everything else (The Dashboard /)
-    if (adminSession !== correctPassword) {
+    // Secure logic: If no password set on server, or cookie doesn't match, Redirect.
+    if (!correctPassword || adminSession !== correctPassword) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
