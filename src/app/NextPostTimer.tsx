@@ -8,12 +8,12 @@ export function NextPostTimer() {
 
     useEffect(() => {
         function calculateNextRun() {
-            // Schedule: Daily at 18:35 UTC (Test time)
+            // Schedule: Daily at 14:00 UTC (11:00 AM Brasilia Standard Time usually)
             const now = new Date();
             const target = new Date();
 
-            // Set target to today at 18:35 UTC
-            target.setUTCHours(18, 35, 0, 0);
+            // Set target to today at 14:00 UTC
+            target.setUTCHours(14, 0, 0, 0);
 
             // If that time has passed today, move to tomorrow
             if (now > target) {
