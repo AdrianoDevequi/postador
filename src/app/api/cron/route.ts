@@ -11,11 +11,10 @@ export async function GET(request: Request) {
 
         // Check for authorization (simple check)
         const authHeader = request.headers.get("authorization");
-        if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && !force) {
-            // Allow force execution without secret if explicitly testing manually? 
-            // Better to fail if not authorized, but for testing we might want flexibility.
-            // Strict for now:
-            // return new NextResponse("Unauthorized", { status: 401 });
+        const isVercelCron = request.headers.get("x-vercel-cron") === "1";
+
+        if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && !force && !isVercelCron) {
+            return new NextResponse("Unauthorized", { status: 401 });
         }
 
         // 1. Get Topic/Subject
