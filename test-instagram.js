@@ -28,20 +28,21 @@ async function debugInstagram() {
         let found = false;
         pagesRes.data.data.forEach(page => {
             const connectedInsta = page.instagram_business_account;
-            const hasInsta = connectedInsta ? `YES (ID: ${connectedInsta.id})` : "NO";
-            console.log(`   - Page: ${page.name} (ID: ${page.id}) | Instagram: ${hasInsta}`);
-
             if (connectedInsta && connectedInsta.id === TARGET_ID) {
                 found = true;
-                console.log("   🎯 MATCH! This token HAS access to your Instagram ID.");
+                console.log(`✅ MATCH FOUND! Page: ${page.name} linked to Instagram ID: ${connectedInsta.id}`);
             }
         });
 
         if (!found) {
             console.error("\n❌ FATAL: The token works, but it DOES NOT have access to the Instagram ID in your .env.");
             console.error(`   You are trying to post to: ${TARGET_ID}`);
-            console.error("   But the token only sees the accounts listed above.");
-            console.error("   SOLUTION: Generate a new token and make sure to select the correct PAGE.");
+            console.error("\n   Available Instagram IDs seen by this token:");
+            pagesRes.data.data.forEach(p => {
+                if (p.instagram_business_account) {
+                    console.error(`   -> ${p.name}: ${p.instagram_business_account.id}`);
+                }
+            });
             return;
         }
 

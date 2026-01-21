@@ -20,5 +20,6 @@ model Post {
   imageUrl  String   @db.Text
   igMediaId String?
   published Boolean  @default(false)
+  error     String?  @db.Text
   createdAt DateTime @default(now())
 }

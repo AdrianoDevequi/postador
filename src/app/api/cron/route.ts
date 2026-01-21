@@ -69,6 +69,7 @@ export async function GET(request: Request) {
                 imageUrl,
                 igMediaId,
                 published,
+                error: igError,
             },
         });
 
