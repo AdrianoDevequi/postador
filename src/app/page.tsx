@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { updateTopic } from "./actions";
 import { NextPostTimer } from "./NextPostTimer";
 import { ManualTrigger } from "./ManualTrigger";
+import { PostActions } from "./PostActions";
 
 export default async function Home() {
   const config = await prisma.config.findUnique({
@@ -60,7 +61,7 @@ export default async function Home() {
 
         {/* Recent Posts Log */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4">Recent Posts Log</h2>
+          <h2 className="text-xl font-semibold mb-4">Gerenciamento de Posts</h2>
           {posts.length === 0 ? (
             <p className="text-gray-500 italic">No posts yet.</p>
           ) : (
@@ -73,8 +74,8 @@ export default async function Home() {
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-2">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${post.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {post.published ? 'Published' : 'Draft/Failed'}
+                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${post.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : post.status === 'ERROR' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {post.status}
                       </span>
                       <span className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleDateString()}</span>
                     </div>
@@ -82,6 +83,12 @@ export default async function Home() {
                     <div className="mt-2 text-xs text-gray-400 font-mono truncate">
                       ID: {post.igMediaId || "N/A"}
                     </div>
+                    {post.status === 'DRAFT' && <PostActions postId={post.id} />}
+                    {post.error && (
+                      <div className="mt-2 text-xs text-red-500 bg-red-50 p-2 rounded">
+                        <strong>Error:</strong> {post.error}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
