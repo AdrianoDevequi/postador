@@ -9,7 +9,8 @@ export async function generateImageUrl(prompt: string): Promise<string> {
         const encodedPrompt = encodeURIComponent(prompt);
         // Add a random seed to ensure freshness if prompt is same
         const seed = Math.floor(Math.random() * 10000);
-        const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&nologo=true`;
+        // Using flux model, specific Instagram dimensions and image enhancement
+        const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?seed=${seed}&width=1080&height=1080&model=flux&nologo=true&enhance=true`;
 
         // Check if the URL is reachable (optional, usually it just works)
         // We can just return this URL as it's a direct image link
