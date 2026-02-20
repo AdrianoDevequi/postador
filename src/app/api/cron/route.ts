@@ -38,26 +38,44 @@ export async function GET(request: Request) {
         const topic = config.value;
 
         // 2. Generate Content
-        const caption = await generateCaption(topic);
-        const imagePrompt = await generateImagePrompt(topic);
+        let caption = "";
+        let imagePrompt = "";
+        let imageUrl = "";
+        let generationError = null;
 
-        // 3. Generate Image
-        const imageUrl = await generateImageUrl(imagePrompt);
+        try {
+            console.log(`Generating text for topic: ${topic}`);
+            caption = await generateCaption(topic);
 
-        // 4. Save to DB directly as DRAFT
+            console.log(`Generating image prompt based on the generated caption`);
+            imagePrompt = await generateImagePrompt(caption);
+
+            // 3. Generate Image
+            imageUrl = await generateImageUrl(imagePrompt);
+        } catch (e: any) {
+            console.error("Content generation failed:", e);
+            generationError = e.message || "Failed to generate content";
+        }
+
+        // 4. Save to DB directly as DRAFT or ERROR
         const post = await prisma.post.create({
             data: {
-                caption,
-                imageUrl,
+                caption: caption || `Falha na geração para o tema: ${topic}`,
+                imageUrl: imageUrl || "https://placehold.co/1080x1080/eeeeee/999999?text=Erro+de+Geracao",
                 published: false,
-                status: "DRAFT",
+                status: generationError ? "ERROR" : "DRAFT",
+                error: generationError,
             },
         });
+
+        if (generationError) {
+            return NextResponse.json({ success: false, post, error: generationError }, { status: 500 });
+        }
 
         return NextResponse.json({ success: true, post, debug: { force, env: process.env.NODE_ENV } });
 
     } catch (error: any) {
-        console.error("Cron job failed:", error);
+        console.error("Cron job critically failed:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
