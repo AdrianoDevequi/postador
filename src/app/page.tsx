@@ -4,6 +4,8 @@ import { NextPostTimer } from "./NextPostTimer";
 import { ManualTrigger } from "./ManualTrigger";
 import { PostActions } from "./PostActions";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const config = await prisma.config.findUnique({
     where: { key: "post_topic" },
@@ -23,38 +25,6 @@ export default async function Home() {
 
         {/* Next Publication Timer */}
         <NextPostTimer />
-
-        {/* Configuration Section */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4">Configuration</h2>
-          <form action={updateTopic} className="space-y-4">
-            <div>
-              <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
-                Daily Post Topic
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  name="topic"
-                  id="topic"
-                  defaultValue={config?.value || "Technology"}
-                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                  placeholder="e.g., Cat Facts"
-                />
-                <button
-                  type="submit"
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium transition-colors"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </form>
-          <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500">
-            <p className="mb-1"><strong>Cron Job URL:</strong> <code className="bg-gray-100 px-1 py-0.5 rounded">/api/cron</code></p>
-            <p>Ensure you set your environment variables in Vercel.</p>
-          </div>
-        </div>
 
         {/* Manual Trigger Component */}
         <ManualTrigger />
@@ -94,6 +64,38 @@ export default async function Home() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Configuration Section */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+          <h2 className="text-xl font-semibold mb-4">Configuration</h2>
+          <form action={updateTopic} className="space-y-4">
+            <div>
+              <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">
+                Daily Post Topic
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="topic"
+                  id="topic"
+                  defaultValue={config?.value || "Technology"}
+                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  placeholder="e.g., Cat Facts"
+                />
+                <button
+                  type="submit"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </form>
+          <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500">
+            <p className="mb-1"><strong>Cron Job URL:</strong> <code className="bg-gray-100 px-1 py-0.5 rounded">/api/cron</code></p>
+            <p>Ensure you set your environment variables in Vercel.</p>
+          </div>
         </div>
       </div>
     </div>
