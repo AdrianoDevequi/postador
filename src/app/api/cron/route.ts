@@ -5,6 +5,8 @@ import { generateCaption, generateImagePrompt } from "@/lib/gemini";
 import { generateImageUrl } from "@/lib/image";
 import { postToInstagram } from "@/lib/instagram";
 
+export const maxDuration = 120; // Allow 2 minutes for Envato scraping
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);

@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { postToInstagram } from "@/lib/instagram";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 function checkAdminAuth(cookieStore: any) {
     const isAdmin = cookieStore.get("admin_session")?.value === process.env.ADMIN_PASSWORD;
@@ -34,7 +34,16 @@ export async function approvePost(id: number) {
     if (!post || post.published) return { error: "Post not found or already published" };
 
     try {
-        const igMediaId = await postToInstagram(post.imageUrl, post.caption);
+        const headersList = await headers();
+        const host = headersList.get("host") || "localhost:3000";
+        const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+        const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
+
+        const absoluteImageUrl = post.imageUrl.startsWith("/")
+            ? `${baseUrl}${post.imageUrl}`
+            : post.imageUrl;
+
+        const igMediaId = await postToInstagram(absoluteImageUrl, post.caption);
         await prisma.post.update({
             where: { id },
             data: { published: true, status: "PUBLISHED", igMediaId, error: null },

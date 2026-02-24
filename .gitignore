@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Envato specific
+envato_auth_state/
+public/envato-downloads/
+tmp/
+envato-output.txt

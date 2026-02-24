@@ -39,20 +39,22 @@ export async function generateCaption(topic: string): Promise<string> {
 
 export async function generateImagePrompt(captionText: string): Promise<string> {
   try {
-    const style = "High quality professional photography, clean composition, excellent lighting. Vibrant colors but very realistic, photorealistic texturing, 8k resolution, suitable for a professional and modern Instagram feed.";
-
     const prompt = `I have an Instagram post with the following caption in Portuguese:
     "${captionText}"
     
-    Create a highly detailed text-to-image prompt (in English) that perfectly illustrates the main subject or feeling of this caption. 
-    The image MUST follow this aesthetic style: "${style}".
+    Create a highly targeted search term (in English) to find a relevant stock photo on Envato/PhotoDune that perfectly illustrates the main subject of this caption.
     
-    Output ONLY the final prompt text without quotes or explanations. Max length: 60 words.`;
+    CRITICAL RULES:
+    - Output ONLY 1 to 3 words.
+    - DO NOT use generic words like "professional", "high quality", "photo", "image".
+    - Focus strictly on the core object or concept (e.g., "artificial intelligence", "business meeting", "coffee cup").
+    - Output ONLY the final search term without quotes, punctuation or explanations.`;
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text();
+    return response.text().trim();
   } catch (error) {
-    console.error("Error generating image prompt:", error);
-    throw new Error("Failed to generate image prompt");
+    console.error("Error generating image search term:", error);
+    throw new Error("Failed to generate image search term");
   }
 }

@@ -1,42 +1,110 @@
 import axios from "axios";
+import * as fs from "fs";
+import * as path from "path";
 
-// Using a public HuggingFace Serverless Inference model for image generation
-export async function generateImageUrl(prompt: string): Promise<string> {
+const ENVATO_API_TOKEN = process.env.ENVATO_API_TOKEN || "";
+
+/**
+ * Busca uma URL de preview (com watermark) no Envato PhotoDune via API.
+ * Usado como fallback quando o scraper do Elements não está disponível.
+ */
+async function searchEnvatoApi(term: string): Promise<string | null> {
+    if (!ENVATO_API_TOKEN) return null;
     try {
-        // We will use a reliable public inference model from Hugging Face for Flux
-        // Using getimg.ai or huggingface direct inference
-        const encodedPrompt = encodeURIComponent(prompt);
-        // Add a random seed to ensure freshness
-        const seed = Math.floor(Math.random() * 10000);
+        console.log(`[image] Buscando no Envato API (PhotoDune): "${term}"`);
+        const searchTerm = encodeURIComponent(term);
+        const url = `https://api.envato.com/v1/discovery/search/search/item?site=photodune.net&term=${searchTerm}&sort_by=relevance`;
 
-        // Since Pollinations is blocking us with Error 1033 (Cloudflare), we switch to another free public endpoint
-        // that handles URL-based generation or we use a free proxy.
-        // Option 1: Using a different public generator (e.g., prodia, or a different unblocked pollinations mirror)
-        // Opting for the official hugging face stabilityai/stable-diffusion-xl-base-1.0 or similar via a proxy if needed
-        // Since we want `fetch` to work, the simplest URL-based image generator that doesn't 530 is often Unsplash (for generic keywords)
-        // or using an open proxy for pollinations. Let's try the un-proxied 'image.pollinations.ai' with a different User-Agent,
-        // or switch to a known working alternative. 
+        const res = await axios.get(url, {
+            headers: { 'Authorization': `Bearer ${ENVATO_API_TOKEN}` }
+        });
 
-        // Let's use DummyImage/Placehold to ensure it at least NEVER breaks the posting flow while we find a permanent free generative host
-        // But for actual generation, there's another popular free endpoint: `api.kastg.xyz/api/ai/text2image` (sometimes works)
-        // For now, let's use a very simple and robust workaround to ensure the system keeps working:
-        // We will use the Unsplash API to get a real, high-quality photo based on the main keywords.
-
-        const keywords = encodeURIComponent(prompt.split(' ').slice(0, 4).join(','));
-        const fallbackUrl = `https://source.unsplash.com/1080x1080/?${keywords}`;
-
-        // Because pollinations is strictly blocking us via CF Turnstile, we'll return a placeholder/unsplash link
-        // that won't crash the Instagram API (Instagram needs a real image URL).
-        // A better long-term solution is adding a HuggingFace API token to .env.
-
-        console.log("Using fallback image URL system due to Pollinations Cloudflare block");
-
-        // We'll use a fast public picsum/unsplash proxy that never blocks
-        const url = `https://picsum.photos/seed/${seed}/1080/1080`;
-
-        return url;
+        const matches = res.data?.matches;
+        if (matches && matches.length > 0) {
+            const previewUrl = matches[0].previews?.icon_with_thumbnail_preview?.thumbnail_url;
+            if (previewUrl) {
+                console.log("[image] Preview URL encontrada:", previewUrl);
+                return previewUrl;
+            }
+        }
     } catch (error) {
-        console.error("Error creating image URL:", error);
-        throw new Error("Failed to generate image URL");
+        console.error(`[image] Envato API search falhou para "${term}":`, error);
     }
+    return null;
+}
+
+/**
+ * Tenta baixar uma imagem via Playwright scraper do Envato Elements (assinatura).
+ * Retorna uma URL de arquivo local (file://) ou null em caso de falha.
+ */
+async function downloadEnvatoElements(term: string): Promise<string | null> {
+    try {
+        const { exec } = await import('child_process');
+        const scriptPath = path.join(process.cwd(), 'src', 'lib', 'run-scraper.ts');
+
+        return new Promise((resolve) => {
+            exec(`npx tsx "${scriptPath}" "${term}"`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error("[image] Envato Elements scraper execution failed:", error);
+                    resolve(null);
+                    return;
+                }
+
+                const outputLines = stdout.split('\n');
+                for (const line of outputLines) {
+                    if (line.startsWith('RESULT_PATH:')) {
+                        const filePath = line.substring('RESULT_PATH:'.length).trim();
+                        if (filePath && fs.existsSync(filePath)) {
+                            // Retorna a URL pública do arquivo (servido pela Next.js via pasta public)
+                            const fileName = path.basename(filePath);
+                            const publicUrl = `/envato-downloads/${fileName}`;
+                            console.log(`[image] ✅ Imagem baixada do Elements: ${publicUrl}`);
+                            resolve(publicUrl);
+                            return;
+                        }
+                    }
+                }
+
+                console.error("[image] Elements scraper did not return a valid RESULT_PATH");
+                resolve(null);
+            });
+        });
+
+    } catch (error) {
+        console.error("[image] Envato Elements scraper falhou:", error);
+    }
+    return null;
+}
+
+/**
+ * Obtém a imagem para um post do Instagram.
+ * Prioridade:
+ *   1. Envato Elements (download real via scraper, assinatura paga)
+ *   2. Envato API / PhotoDune (preview com watermark)
+ *   3. Unsplash (fallback gratuito)
+ *
+ * @param prompt - Termo de busca gerado pelo Gemini
+ * @returns URL (http) ou caminho local do arquivo de imagem
+ */
+export async function generateImageUrl(prompt: string): Promise<string> {
+    const sanitized = prompt.trim();
+
+    // Tentativa 1: Envato Elements via Playwright (imagem real, sem watermark, HD)
+    const elementsPath = await downloadEnvatoElements(sanitized);
+    if (elementsPath) return elementsPath;
+
+    // Tentativa 2: Envato API com termo completo
+    let apiUrl = await searchEnvatoApi(sanitized);
+    if (apiUrl) return apiUrl;
+
+    // Tentativa 3: Envato API com apenas a primeira palavra (busca mais ampla)
+    if (sanitized.includes(' ')) {
+        const firstWord = sanitized.split(' ')[0];
+        apiUrl = await searchEnvatoApi(firstWord);
+        if (apiUrl) return apiUrl;
+    }
+
+    // Fallback final: Unsplash
+    console.log("[image] Usando Unsplash como fallback.");
+    return `https://source.unsplash.com/1080x1080/?${encodeURIComponent(sanitized)}`;
 }
