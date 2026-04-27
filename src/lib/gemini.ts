@@ -71,13 +71,15 @@ export async function generateImagePrompt(captionText: string, brand: BrandConte
     const prompt = `I have an Instagram post with the following caption in Portuguese:
     "${captionText}"
 
-    Create a detailed image generation prompt (in English) for an AI image generator that perfectly illustrates this caption as a full-bleed Instagram square photo.${styleHint}${colorHint}
+    Create a detailed AI image generation prompt (in English) for a full-bleed 1:1 square Instagram photo.${styleHint}${colorHint}
 
     CRITICAL RULES:
     - Output ONLY the final image prompt, nothing else.
-    - Must be a PHOTOGRAPHIC or REALISTIC image that fills the entire frame — NO slides, NO banners, NO presentations, NO white backgrounds, NO text overlays.
-    - Describe a real-world scene or concept with rich visual detail: subject, environment, lighting, mood, depth.
-    - Keep it under 200 characters.`;
+    - Write at least 3 sentences describing: (1) the main subject/scene, (2) environment and background, (3) lighting, mood, and camera style.
+    - Must be PHOTOREALISTIC — NO illustrations, NO slides, NO banners, NO white backgrounds, NO text, NO UI elements.
+    - The scene must fill the ENTIRE frame edge to edge with no empty space.
+    - End the prompt with: "professional photography, 85mm lens, full frame, sharp focus"
+    - Keep total under 300 characters.`;
 
     const text = await chat(prompt);
     return text.trim();
