@@ -10,7 +10,7 @@ type BrandContext = Record<string, string>;
 async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Promise<string | null> {
     const styleHint = brand.brand_style ? `, style: ${brand.brand_style}` : "";
     const colorHint = brand.brand_colors ? `, colors: ${brand.brand_colors}` : "";
-    const fullPrompt = `${prompt}${styleHint}${colorHint}. Full-bleed square photo, no white space, no text, no banners, photorealistic`;
+    const fullPrompt = `${prompt}${styleHint}${colorHint}. Full 1:1 square canvas, no white space, fills entire frame`;
 
     if (!OPENAI_API_KEY) return null;
     try {
@@ -23,6 +23,7 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
                 n: 1,
                 size: "1024x1024",
                 output_format: "jpeg",
+                output_compression: 75,
             },
             {
                 headers: {

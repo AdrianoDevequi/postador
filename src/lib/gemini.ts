@@ -65,21 +65,27 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
 
 export async function generateImagePrompt(captionText: string, brand: BrandContext = {}): Promise<string> {
   try {
-    const styleHint = brand.brand_style ? ` Visual style: ${brand.brand_style}.` : "";
-    const colorHint = brand.brand_colors ? ` Color palette: ${brand.brand_colors}.` : "";
+    const brandName = brand.brand_name || "the brand";
+    const colors = brand.brand_colors || "deep blue and white";
+    const style = brand.brand_style || "modern and professional";
+    const description = brand.brand_description || "";
 
-    const prompt = `I have an Instagram post with the following caption in Portuguese:
-    "${captionText}"
+    const prompt = `I have an Instagram post caption in Portuguese: "${captionText.substring(0, 200)}"
 
-    Create a detailed AI image generation prompt (in English) for a full-bleed 1:1 square Instagram photo.${styleHint}${colorHint}
+Create an English prompt for gpt-image-2 to generate a STYLIZED Instagram post design (like a professional social media graphic), NOT a plain photo.
 
-    CRITICAL RULES:
-    - Output ONLY the final image prompt, nothing else.
-    - Write at least 3 sentences describing: (1) the main subject/scene, (2) environment and background, (3) lighting, mood, and camera style.
-    - Must be PHOTOREALISTIC — NO illustrations, NO slides, NO banners, NO white backgrounds, NO text, NO UI elements.
-    - The scene must fill the ENTIRE frame edge to edge with no empty space.
-    - End the prompt with: "professional photography, 85mm lens, full frame, sharp focus"
-    - Keep total under 300 characters.`;
+Brand: ${brandName}. Colors: ${colors}. Style: ${style}.${description ? ` About: ${description}.` : ""}
+
+The prompt must describe:
+- A full 1:1 square canvas Instagram post graphic
+- A relevant background photo or scene related to the caption topic
+- A semi-transparent colored overlay using the brand colors
+- Bold headline text in Portuguese summarizing the caption (max 6 words)
+- Brand name "${brandName}" visible as a text label
+- Clean professional social media graphic design layout
+- NO white space, fills entire canvas
+
+Output ONLY the image generation prompt in English, under 400 characters.`;
 
     const text = await chat(prompt);
     return text.trim();
