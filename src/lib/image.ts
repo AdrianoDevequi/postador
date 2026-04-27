@@ -8,11 +8,11 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 async function generateWithOpenAI(prompt: string): Promise<string | null> {
     if (!OPENAI_API_KEY) return null;
     try {
-        console.log(`[image] Gerando imagem com gpt-image-1: "${prompt}"`);
+        console.log(`[image] Gerando imagem com gpt-image-2: "${prompt}"`);
         const res = await axios.post(
             "https://api.openai.com/v1/images/generations",
             {
-                model: "gpt-image-1",
+                model: "gpt-image-2",
                 prompt,
                 n: 1,
                 size: "1024x1024",

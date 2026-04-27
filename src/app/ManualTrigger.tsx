@@ -109,10 +109,10 @@ export function ManualTrigger() {
                         <a
                             href={result.imageUrl}
                             target="_blank"
-                            className="block mb-4 rounded-lg overflow-hidden shadow-md mx-auto max-w-xs hover:opacity-90 transition-opacity"
+                            className="block mb-4 rounded-lg overflow-hidden shadow-md mx-auto max-w-sm hover:opacity-90 transition-opacity"
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={result.imageUrl} alt="Generated Post" className="w-full h-auto" />
+                            <img src={result.imageUrl} alt="Generated Post" className="w-full h-full object-contain" />
                         </a>
                     )}
 
