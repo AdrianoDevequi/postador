@@ -3,6 +3,40 @@ import * as fs from "fs";
 import * as path from "path";
 
 const ENVATO_API_TOKEN = process.env.ENVATO_API_TOKEN || "";
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+
+async function generateWithOpenAI(prompt: string): Promise<string | null> {
+    if (!OPENAI_API_KEY) return null;
+    try {
+        console.log(`[image] Gerando imagem com gpt-image-2: "${prompt}"`);
+        const res = await axios.post(
+            "https://api.openai.com/v1/images/generations",
+            {
+                model: "gpt-image-2",
+                prompt,
+                n: 1,
+                size: "1024x1024",
+                quality: "low",
+                output_format: "url",
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${OPENAI_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+        const url = res.data?.data?.[0]?.url;
+        if (url) {
+            console.log("[image] ✅ Imagem gerada pela OpenAI:", url);
+            return url;
+        }
+    } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error("[image] OpenAI image generation falhou:", msg);
+    }
+    return null;
+}
 
 /**
  * Busca uma URL de preview (com watermark) no Envato PhotoDune via API.
@@ -89,15 +123,19 @@ async function downloadEnvatoElements(term: string): Promise<string | null> {
 export async function generateImageUrl(prompt: string): Promise<string> {
     const sanitized = prompt.trim();
 
-    // Tentativa 1: Envato Elements via Playwright (imagem real, sem watermark, HD)
+    // Tentativa 1: OpenAI gpt-image-1 (geração por IA)
+    const openAiUrl = await generateWithOpenAI(sanitized);
+    if (openAiUrl) return openAiUrl;
+
+    // Tentativa 2: Envato Elements via Playwright (imagem real, sem watermark, HD)
     const elementsPath = await downloadEnvatoElements(sanitized);
     if (elementsPath) return elementsPath;
 
-    // Tentativa 2: Envato API com termo completo
+    // Tentativa 3: Envato API com termo completo
     let apiUrl = await searchEnvatoApi(sanitized);
     if (apiUrl) return apiUrl;
 
-    // Tentativa 3: Envato API com apenas a primeira palavra (busca mais ampla)
+    // Tentativa 4: Envato API com apenas a primeira palavra (busca mais ampla)
     if (sanitized.includes(' ')) {
         const firstWord = sanitized.split(' ')[0];
         apiUrl = await searchEnvatoApi(firstWord);
