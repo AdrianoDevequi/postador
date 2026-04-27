@@ -32,8 +32,11 @@ async function generateWithOpenAI(prompt: string): Promise<string | null> {
             return `data:image/jpeg;base64,${b64}`;
         }
     } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error("[image] OpenAI image generation falhou:", msg);
+        if (axios.isAxiosError(error)) {
+            console.error("[image] OpenAI erro HTTP:", error.response?.status, JSON.stringify(error.response?.data));
+        } else {
+            console.error("[image] OpenAI erro:", error);
+        }
     }
     return null;
 }
