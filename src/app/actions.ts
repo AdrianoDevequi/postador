@@ -26,6 +26,26 @@ export async function updateTopic(formData: FormData) {
     revalidatePath("/");
 }
 
+export async function updateBrandConfig(formData: FormData) {
+    const cookieStore = await cookies();
+    checkAdminAuth(cookieStore);
+
+    const fields = ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"];
+
+    for (const key of fields) {
+        const value = formData.get(key) as string;
+        if (value !== null) {
+            await prisma.config.upsert({
+                where: { key },
+                update: { value },
+                create: { key, value },
+            });
+        }
+    }
+
+    revalidatePath("/");
+}
+
 export async function approvePost(id: number) {
     const cookieStore = await cookies();
     checkAdminAuth(cookieStore);

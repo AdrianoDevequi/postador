@@ -39,6 +39,12 @@ export async function GET(request: Request) {
 
         const topic = config.value;
 
+        // Brand context
+        const brandConfigs = await prisma.config.findMany({
+            where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"] } },
+        });
+        const brand = Object.fromEntries(brandConfigs.map((c: any) => [c.key, c.value]));
+
         // 2. Generate Content
         let caption = "";
         let imagePrompt = "";
@@ -47,13 +53,13 @@ export async function GET(request: Request) {
 
         try {
             console.log(`Generating text for topic: ${topic}`);
-            caption = await generateCaption(topic);
+            caption = await generateCaption(topic, brand);
 
             console.log(`Generating image prompt based on the generated caption`);
-            imagePrompt = await generateImagePrompt(caption);
+            imagePrompt = await generateImagePrompt(caption, brand);
 
             // 3. Generate Image
-            imageUrl = await generateImageUrl(imagePrompt);
+            imageUrl = await generateImageUrl(imagePrompt, brand);
         } catch (e: any) {
             console.error("Content generation failed:", e);
             generationError = e.message || "Failed to generate content";

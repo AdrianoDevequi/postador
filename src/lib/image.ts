@@ -5,15 +5,21 @@ import * as path from "path";
 const ENVATO_API_TOKEN = process.env.ENVATO_API_TOKEN || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
-async function generateWithOpenAI(prompt: string): Promise<string | null> {
+type BrandContext = Record<string, string>;
+
+async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Promise<string | null> {
+    const styleHint = brand.brand_style ? `, style: ${brand.brand_style}` : "";
+    const colorHint = brand.brand_colors ? `, colors: ${brand.brand_colors}` : "";
+    const fullPrompt = `${prompt}${styleHint}${colorHint}`;
+
     if (!OPENAI_API_KEY) return null;
     try {
-        console.log(`[image] Gerando imagem com gpt-image-2: "${prompt}"`);
+        console.log(`[image] Gerando imagem com gpt-image-2: "${fullPrompt}"`);
         const res = await axios.post(
             "https://api.openai.com/v1/images/generations",
             {
                 model: "gpt-image-2",
-                prompt,
+                prompt: fullPrompt,
                 n: 1,
                 size: "1024x1024",
                 output_format: "jpeg",
@@ -122,11 +128,11 @@ async function downloadEnvatoElements(term: string): Promise<string | null> {
  * @param prompt - Termo de busca gerado pelo Gemini
  * @returns URL (http) ou caminho local do arquivo de imagem
  */
-export async function generateImageUrl(prompt: string): Promise<string> {
+export async function generateImageUrl(prompt: string, brand: BrandContext = {}): Promise<string> {
     const sanitized = prompt.trim();
 
-    // Tentativa 1: OpenAI gpt-image-1 (geração por IA)
-    const openAiUrl = await generateWithOpenAI(sanitized);
+    // Tentativa 1: OpenAI gpt-image-2 (geração por IA)
+    const openAiUrl = await generateWithOpenAI(sanitized, brand);
     if (openAiUrl) return openAiUrl;
 
     // Tentativa 2: Envato Elements via Playwright (imagem real, sem watermark, HD)

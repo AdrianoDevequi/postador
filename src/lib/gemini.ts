@@ -20,7 +20,19 @@ async function chat(prompt: string): Promise<string> {
   return res.data.choices[0].message.content.trim();
 }
 
-export async function generateCaption(topic: string): Promise<string> {
+type BrandContext = Record<string, string>;
+
+function buildBrandBlock(brand: BrandContext): string {
+  const lines = [];
+  if (brand.brand_name) lines.push(`- Nome da marca: ${brand.brand_name}`);
+  if (brand.brand_description) lines.push(`- Descrição: ${brand.brand_description}`);
+  if (brand.brand_style) lines.push(`- Estilo: ${brand.brand_style}`);
+  if (brand.brand_colors) lines.push(`- Cores: ${brand.brand_colors}`);
+  if (brand.brand_extra) lines.push(`- Contexto extra: ${brand.brand_extra}`);
+  return lines.length ? `\n\n    IDENTIDADE DA MARCA:\n    ${lines.join("\n    ")}` : "";
+}
+
+export async function generateCaption(topic: string, brand: BrandContext = {}): Promise<string> {
   try {
     const postTypes = [
       "uma dica prática ou tutorial rápido",
@@ -31,11 +43,12 @@ export async function generateCaption(topic: string): Promise<string> {
     ];
 
     const randomType = postTypes[Math.floor(Math.random() * postTypes.length)];
+    const brandBlock = buildBrandBlock(brand);
 
     const prompt = `Haja como um Social Media experiente. O tema central do perfil é "${topic}".
     Hoje, eu preciso que você crie um post do tipo: **${randomType}** (mas relacionado ao tema central de alguma forma).
     Escreva uma legenda de Instagram envolvente e persuasiva em PORTUGUÊS DO BRASIL.
-    Use emojis e hashtags relevantes. Seja criativo, não repita os mesmos padrões de sempre. Mantenha abaixo de 1800 caracteres.
+    Use emojis e hashtags relevantes. Seja criativo, não repita os mesmos padrões de sempre. Mantenha abaixo de 1800 caracteres.${brandBlock}
 
     REGRAS CRÍTICAS DE FORMATAÇÃO:
     - NÃO inclua nenhuma introdução conversacional (ex: "Uau! Adoro um desafio", "Aqui está o post:", "Claro!", etc).
@@ -50,18 +63,21 @@ export async function generateCaption(topic: string): Promise<string> {
   }
 }
 
-export async function generateImagePrompt(captionText: string): Promise<string> {
+export async function generateImagePrompt(captionText: string, brand: BrandContext = {}): Promise<string> {
   try {
+    const styleHint = brand.brand_style ? ` The image style should be: ${brand.brand_style}.` : "";
+    const colorHint = brand.brand_colors ? ` Preferred colors: ${brand.brand_colors}.` : "";
+
     const prompt = `I have an Instagram post with the following caption in Portuguese:
     "${captionText}"
 
-    Create a highly targeted search term (in English) to find a relevant stock photo on Envato/PhotoDune that perfectly illustrates the main subject of this caption.
+    Create a detailed image generation prompt (in English) for an AI image generator that perfectly illustrates this caption for an Instagram post.${styleHint}${colorHint}
 
     CRITICAL RULES:
-    - Output ONLY 1 to 3 words.
-    - DO NOT use generic words like "professional", "high quality", "photo", "image".
-    - Focus strictly on the core object or concept (e.g., "artificial intelligence", "business meeting", "coffee cup").
-    - Output ONLY the final search term without quotes, punctuation or explanations.`;
+    - Output ONLY the final image prompt, nothing else.
+    - Be descriptive and visual — mention composition, lighting, mood, and subject.
+    - DO NOT mention text, logos, or watermarks.
+    - Keep it under 200 characters.`;
 
     const text = await chat(prompt);
     return text.trim();
