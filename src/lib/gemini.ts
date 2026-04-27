@@ -65,18 +65,18 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
 
 export async function generateImagePrompt(captionText: string, brand: BrandContext = {}): Promise<string> {
   try {
-    const styleHint = brand.brand_style ? ` The image style should be: ${brand.brand_style}.` : "";
-    const colorHint = brand.brand_colors ? ` Preferred colors: ${brand.brand_colors}.` : "";
+    const styleHint = brand.brand_style ? ` Visual style: ${brand.brand_style}.` : "";
+    const colorHint = brand.brand_colors ? ` Color palette: ${brand.brand_colors}.` : "";
 
     const prompt = `I have an Instagram post with the following caption in Portuguese:
     "${captionText}"
 
-    Create a detailed image generation prompt (in English) for an AI image generator that perfectly illustrates this caption for an Instagram post.${styleHint}${colorHint}
+    Create a detailed image generation prompt (in English) for an AI image generator that perfectly illustrates this caption as a full-bleed Instagram square photo.${styleHint}${colorHint}
 
     CRITICAL RULES:
     - Output ONLY the final image prompt, nothing else.
-    - Be descriptive and visual — mention composition, lighting, mood, and subject.
-    - DO NOT mention text, logos, or watermarks.
+    - Must be a PHOTOGRAPHIC or REALISTIC image that fills the entire frame — NO slides, NO banners, NO presentations, NO white backgrounds, NO text overlays.
+    - Describe a real-world scene or concept with rich visual detail: subject, environment, lighting, mood, depth.
     - Keep it under 200 characters.`;
 
     const text = await chat(prompt);
