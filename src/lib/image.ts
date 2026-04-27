@@ -17,7 +17,7 @@ async function generateWithOpenAI(prompt: string): Promise<string | null> {
                 n: 1,
                 size: "1024x1024",
                 quality: "low",
-                output_format: "url",
+                response_format: "b64_json",
             },
             {
                 headers: {
@@ -26,10 +26,10 @@ async function generateWithOpenAI(prompt: string): Promise<string | null> {
                 },
             }
         );
-        const url = res.data?.data?.[0]?.url;
-        if (url) {
-            console.log("[image] ✅ Imagem gerada pela OpenAI:", url);
-            return url;
+        const b64 = res.data?.data?.[0]?.b64_json;
+        if (b64) {
+            console.log("[image] ✅ Imagem gerada pela OpenAI (base64)");
+            return `data:image/png;base64,${b64}`;
         }
     } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
