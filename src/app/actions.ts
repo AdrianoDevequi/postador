@@ -88,3 +88,18 @@ export async function deletePost(id: number) {
     await prisma.post.delete({ where: { id } });
     revalidatePath("/");
 }
+
+export async function cleanOldPosts() {
+    const cookieStore = await cookies();
+    checkAdminAuth(cookieStore);
+
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 15);
+
+    const { count } = await prisma.post.deleteMany({
+        where: { createdAt: { lt: cutoff } },
+    });
+
+    revalidatePath("/");
+    return { count };
+}

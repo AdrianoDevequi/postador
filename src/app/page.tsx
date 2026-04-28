@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { updateTopic, updateBrandConfig } from "./actions";
+import { updateTopic, updateBrandConfig, cleanOldPosts } from "./actions";
+import { CleanPostsButton } from "./CleanPostsButton";
 import { NextPostTimer } from "./NextPostTimer";
 import { ManualTrigger } from "./ManualTrigger";
 import { PostActions } from "./PostActions";
@@ -36,7 +37,10 @@ export default async function Home() {
 
         {/* Recent Posts Log */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4">Gerenciamento de Posts</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Gerenciamento de Posts</h2>
+            <CleanPostsButton action={cleanOldPosts} />
+          </div>
           {posts.length === 0 ? (
             <p className="text-gray-500 italic">No posts yet.</p>
           ) : (
