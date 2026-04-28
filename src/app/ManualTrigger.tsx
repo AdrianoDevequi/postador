@@ -105,14 +105,14 @@ export function ManualTrigger() {
                     </h3>
                     {error && <p className="text-red-600 mb-4">{error}</p>}
 
-                    {result.imageUrl && !result.imageUrl.includes('placehold.co') && (
+                    {result.id && !result.imageUrl?.includes('placehold.co') && (
                         <a
-                            href={result.imageUrl}
+                            href={`/api/image/${result.id}`}
                             target="_blank"
                             className="block mb-4 rounded-lg overflow-hidden shadow-md mx-auto max-w-sm hover:opacity-90 transition-opacity"
                         >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={result.imageUrl} alt="Generated Post" className="w-full h-auto" />
+                            <img src={`/api/image/${result.id}`} alt="Generated Post" className="w-full h-auto" />
                         </a>
                     )}
 

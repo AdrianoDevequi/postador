@@ -2,7 +2,6 @@ import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
 import sharp from "sharp";
-import { uploadImageToFtp } from "./ftp";
 
 const ENVATO_API_TOKEN = process.env.ENVATO_API_TOKEN || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
@@ -51,17 +50,13 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
                         .composite([{ input: logoResized, gravity: "southeast", blend: "over" }])
                         .jpeg({ quality: 85 })
                         .toBuffer();
-                    const compositedDataUrl = `data:image/jpeg;base64,${composited.toString("base64")}`;
-                    const ftpUrlLogo = await uploadImageToFtp(compositedDataUrl);
-                    return ftpUrlLogo || compositedDataUrl;
+                            return `data:image/jpeg;base64,${composited.toString("base64")}`;
                 } catch (e) {
                     console.error("[image] Falha ao sobrepor logo:", e);
                 }
             }
 
-            const dataUrl = `data:image/jpeg;base64,${b64}`;
-            const ftpUrl = await uploadImageToFtp(dataUrl);
-            return ftpUrl || dataUrl;
+            return `data:image/jpeg;base64,${b64}`;
         }
     } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
