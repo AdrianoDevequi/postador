@@ -51,10 +51,6 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
                         .composite([{ input: logoResized, gravity: "southeast", blend: "over" }])
                         .jpeg({ quality: 85 })
                         .toBuffer();
-                    const composited = await sharp(imageBuffer)
-                        .composite([{ input: logoResized, gravity: "southeast", blend: "over" }])
-                        .jpeg({ quality: 85 })
-                        .toBuffer();
                     const compositedDataUrl = `data:image/jpeg;base64,${composited.toString("base64")}`;
                     const ftpUrlLogo = await uploadImageToFtp(compositedDataUrl);
                     return ftpUrlLogo || compositedDataUrl;
