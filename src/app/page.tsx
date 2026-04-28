@@ -65,7 +65,9 @@ export default async function Home() {
                     <div className="mt-2 text-xs text-gray-400 font-mono truncate">
                       ID: {post.igMediaId || "N/A"}
                     </div>
-                    {post.status === 'DRAFT' && <PostActions postId={post.id} />}
+                    {(post.status === 'DRAFT' || post.status === 'ERROR') && (
+                      <PostActions postId={post.id} isError={post.status === 'ERROR'} />
+                    )}
                     {post.error && (
                       <div className="mt-2 text-xs text-red-500 bg-red-50 p-2 rounded">
                         <strong>Error:</strong> {post.error}

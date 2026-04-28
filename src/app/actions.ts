@@ -92,6 +92,18 @@ export async function approvePost(id: number) {
     }
 }
 
+export async function resetPostToDraft(id: number) {
+    const cookieStore = await cookies();
+    checkAdminAuth(cookieStore);
+
+    await prisma.post.update({
+        where: { id },
+        data: { status: "DRAFT", published: false, error: null },
+    });
+
+    revalidatePath("/");
+}
+
 export async function deletePost(id: number) {
     const cookieStore = await cookies();
     checkAdminAuth(cookieStore);
