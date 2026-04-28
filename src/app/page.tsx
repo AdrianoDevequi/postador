@@ -50,7 +50,7 @@ export default async function Home() {
             <div className="space-y-6">
               {posts.map((post: any) => (
                 <div key={post.id} className="flex gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                  <a href={post.imageUrl} target="_blank" rel="noopener noreferrer" className="w-32 h-32 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden relative block hover:opacity-80 transition-opacity cursor-zoom-in">
+                  <a href={`/api/image/${post.id}`} target="_blank" rel="noopener noreferrer" className="w-32 h-32 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden relative block hover:opacity-80 transition-opacity cursor-zoom-in">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={post.imageUrl} alt="Generated" className="object-cover w-full h-full" />
                   </a>

@@ -1,6 +1,7 @@
 import axios from "axios";
 import * as fs from "fs";
 import * as path from "path";
+import sharp from "sharp";
 
 const ENVATO_API_TOKEN = process.env.ENVATO_API_TOKEN || "";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
@@ -35,6 +36,26 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
         const b64 = res.data?.data?.[0]?.b64_json;
         if (b64) {
             console.log("[image] ✅ Imagem gerada pela OpenAI (base64)");
+            const imageBuffer = Buffer.from(b64, "base64");
+
+            if (brand.brand_logo_url) {
+                try {
+                    const logoRes = await axios.get(brand.brand_logo_url, { responseType: "arraybuffer" });
+                    const logoBuffer = Buffer.from(logoRes.data);
+                    const logoResized = await sharp(logoBuffer)
+                        .resize({ width: 180, height: 80, fit: "inside" })
+                        .png()
+                        .toBuffer();
+                    const composited = await sharp(imageBuffer)
+                        .composite([{ input: logoResized, gravity: "southeast", blend: "over" }])
+                        .jpeg({ quality: 85 })
+                        .toBuffer();
+                    return `data:image/jpeg;base64,${composited.toString("base64")}`;
+                } catch (e) {
+                    console.error("[image] Falha ao sobrepor logo:", e);
+                }
+            }
+
             return `data:image/jpeg;base64,${b64}`;
         }
     } catch (error: unknown) {
