@@ -13,7 +13,7 @@ export default async function Home() {
   });
 
   const brandConfigs = await prisma.config.findMany({
-    where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"] } },
+    where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra", "brand_use_logo", "brand_less_text"] } },
   });
   const brand = Object.fromEntries(brandConfigs.map((c: any) => [c.key, c.value]));
 
@@ -133,6 +133,17 @@ export default async function Home() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Contexto extra</label>
               <textarea name="brand_extra" defaultValue={brand.brand_extra || ""} rows={2} placeholder="Qualquer informação adicional que deva guiar os posts (público-alvo, tom de voz, etc.)" className="w-full rounded-md border p-2 text-sm border-gray-300" />
+            </div>
+
+            <div className="flex flex-col gap-3 pt-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="brand_use_logo" value="true" defaultChecked={brand.brand_use_logo === "true"} className="w-4 h-4 rounded border-gray-300 text-indigo-600" />
+                <span className="text-sm font-medium text-gray-700">Adicionar logo na imagem</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="brand_less_text" value="true" defaultChecked={brand.brand_less_text === "true"} className="w-4 h-4 rounded border-gray-300 text-indigo-600" />
+                <span className="text-sm font-medium text-gray-700">Menos texto (só título, sem bullets)</span>
+              </label>
             </div>
 
             <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium transition-colors">

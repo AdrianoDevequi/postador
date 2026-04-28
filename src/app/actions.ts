@@ -30,9 +30,10 @@ export async function updateBrandConfig(formData: FormData) {
     const cookieStore = await cookies();
     checkAdminAuth(cookieStore);
 
-    const fields = ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"];
+    const textFields = ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"];
+    const checkboxFields = ["brand_use_logo", "brand_less_text"];
 
-    for (const key of fields) {
+    for (const key of textFields) {
         const value = formData.get(key) as string;
         if (value !== null) {
             await prisma.config.upsert({
@@ -41,6 +42,15 @@ export async function updateBrandConfig(formData: FormData) {
                 create: { key, value },
             });
         }
+    }
+
+    for (const key of checkboxFields) {
+        const value = formData.get(key) === "true" ? "true" : "false";
+        await prisma.config.upsert({
+            where: { key },
+            update: { value },
+            create: { key, value },
+        });
     }
 
     revalidatePath("/");
@@ -73,7 +83,8 @@ export async function approvePost(id: number) {
         revalidatePath("/");
         return { success: true };
     } catch (e: any) {
-        const errorMsg = e.response?.data || e.message || "Unknown error";
+        const raw = e.response?.data || e.message || "Unknown error";
+        const errorMsg = typeof raw === "string" ? raw : JSON.stringify(raw);
         await prisma.post.update({
             where: { id },
             data: { status: "ERROR", error: errorMsg },

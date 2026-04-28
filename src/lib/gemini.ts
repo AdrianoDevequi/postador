@@ -70,6 +70,11 @@ export async function generateImagePrompt(captionText: string, brand: BrandConte
     const style = brand.brand_style || "modern and professional";
     const description = brand.brand_description || "";
 
+    const lessText = brand.brand_less_text === "true";
+    const textRule = lessText
+      ? "- One bold headline in Portuguese (max 5 words) — NO bullet points, NO subtitle, title only"
+      : "- One bold headline in Portuguese (max 5 words)\n- Optionally 2-3 short bullet points or a subtitle (max 5 words each)\n- Keep text minimal and balanced — do NOT fill the image with text";
+
     const prompt = `I have an Instagram post caption in Portuguese: "${captionText.substring(0, 200)}"
 
 Create an English prompt for gpt-image-2 to generate a STYLIZED Instagram post design (like a professional social media graphic), NOT a plain photo.
@@ -80,9 +85,7 @@ The prompt must describe:
 - A full 1:1 square canvas Instagram post graphic
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
-- One bold headline in Portuguese (max 5 words)
-- Optionally 2-3 short bullet points or a subtitle (max 5 words each)
-- Keep text minimal and balanced — do NOT fill the image with text
+${textRule}
 - Clean professional social media graphic design layout
 - ABSOLUTELY NO logos, NO brand marks, NO company names, NO icons with text, NO badges — the image must have ZERO branding elements
 - NO white space, fills entire canvas

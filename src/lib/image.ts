@@ -38,7 +38,7 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
             console.log("[image] ✅ Imagem gerada pela OpenAI (base64)");
             const imageBuffer = Buffer.from(b64, "base64");
 
-            if (brand.brand_logo_url) {
+            if (brand.brand_logo_url && brand.brand_use_logo === "true") {
                 try {
                     const logoRes = await axios.get(brand.brand_logo_url, { responseType: "arraybuffer" });
                     const logoBuffer = Buffer.from(logoRes.data);
