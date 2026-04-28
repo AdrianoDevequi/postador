@@ -59,9 +59,11 @@ export async function approvePost(id: number) {
         const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
         const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
 
-        const absoluteImageUrl = post.imageUrl.startsWith("/")
-            ? `${baseUrl}${post.imageUrl}`
-            : post.imageUrl;
+        const absoluteImageUrl = post.imageUrl.startsWith("data:")
+            ? `${baseUrl}/api/image/${post.id}`
+            : post.imageUrl.startsWith("/")
+                ? `${baseUrl}${post.imageUrl}`
+                : post.imageUrl;
 
         const igMediaId = await postToInstagram(absoluteImageUrl, post.caption);
         await prisma.post.update({
