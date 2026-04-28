@@ -1,8 +1,9 @@
 import axios from "axios";
+import { isFtpImageUrl, downloadImageFromFtp } from "./ftp";
 
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY || "";
 
-async function uploadToImgBB(base64DataUrl: string): Promise<string | null> {
+export async function uploadToImgBB(base64DataUrl: string): Promise<string | null> {
     if (!IMGBB_API_KEY) return null;
     try {
         const base64 = base64DataUrl.split(",")[1];
@@ -27,16 +28,31 @@ async function uploadToImgBB(base64DataUrl: string): Promise<string | null> {
 }
 
 /**
- * Resolves the public URL to use when posting to Instagram.
- * Uploads data: URLs to ImgBB (HTTPS CDN); falls back to /api/image route.
+ * Resolves the public URL for Instagram.
+ * - data: URL → upload to ImgBB
+ * - FTP URL → download from FTP → upload to ImgBB
+ * - Other URLs → return as-is
  */
 export async function resolveInstagramImageUrl(imageUrl: string, postId: number, baseUrl: string): Promise<string> {
-    if (!imageUrl.startsWith("data:")) {
-        return imageUrl.startsWith("/") ? `${baseUrl}${imageUrl}` : imageUrl;
+    let dataUrl: string | null = null;
+
+    if (imageUrl.startsWith("data:")) {
+        dataUrl = imageUrl;
+    } else if (isFtpImageUrl(imageUrl)) {
+        const filename = imageUrl.split("/").pop();
+        if (filename) {
+            dataUrl = await downloadImageFromFtp(filename);
+        }
+    } else if (imageUrl.startsWith("/")) {
+        return `${baseUrl}${imageUrl}`;
+    } else {
+        return imageUrl;
     }
 
-    const cdnUrl = await uploadToImgBB(imageUrl);
-    if (cdnUrl) return cdnUrl;
+    if (dataUrl) {
+        const cdnUrl = await uploadToImgBB(dataUrl);
+        if (cdnUrl) return cdnUrl;
+    }
 
     // Last resort: serve from our own API route
     return `${baseUrl}/api/image/${postId}`;

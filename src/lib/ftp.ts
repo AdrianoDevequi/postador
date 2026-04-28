@@ -1,5 +1,5 @@
 import * as ftp from "basic-ftp";
-import { Readable } from "stream";
+import { Readable, Writable } from "stream";
 import crypto from "crypto";
 
 const FTP_HOST = process.env.FTP_HOST || "104.156.48.234";
@@ -44,8 +44,43 @@ export async function uploadImageToFtp(base64DataUrl: string): Promise<string | 
     }
 }
 
+export function isFtpImageUrl(url: string) {
+    return url.includes("adm.jupitersites.com/img-postador") || url.includes("104.156.48.234");
+}
+
+export async function downloadImageFromFtp(filename: string): Promise<string | null> {
+    if (!FTP_USER || !FTP_PASSWORD) return null;
+
+    const client = new ftp.Client();
+    client.ftp.verbose = false;
+
+    try {
+        await client.access({
+            host: FTP_HOST,
+            user: FTP_USER,
+            password: FTP_PASSWORD,
+            secure: false,
+        });
+
+        const chunks: Buffer[] = [];
+        const writable = new Writable({
+            write(chunk, _enc, cb) { chunks.push(Buffer.from(chunk)); cb(); }
+        });
+
+        await client.downloadTo(writable, `${FTP_REMOTE_DIR}/${filename}`);
+        const buffer = Buffer.concat(chunks);
+        console.log("[ftp] ✅ Imagem baixada:", filename);
+        return `data:image/jpeg;base64,${buffer.toString("base64")}`;
+    } catch (e: any) {
+        console.error("[ftp] Falha ao baixar:", e.message);
+        return null;
+    } finally {
+        client.close();
+    }
+}
+
 export async function deleteImageFromFtp(imageUrl: string): Promise<void> {
-    if (!isFtpUrl(imageUrl) || !FTP_USER || !FTP_PASSWORD) return;
+    if (!isFtpImageUrl(imageUrl) || !FTP_USER || !FTP_PASSWORD) return;
 
     const filename = imageUrl.split("/").pop();
     if (!filename) return;
