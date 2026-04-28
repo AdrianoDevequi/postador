@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone *)",
+      "Bash(git -C C:\\\\Users\\\\adria\\\\Documents\\\\Claude\\\\postador pull)",
+      "Bash(mv /c/Users/adria/Documents/Claude/postador/UsersadriaDocumentsClaudepostador/* /c/Users/adria/Documents/Claude/postador/)",
+      "Bash(mv /c/Users/adria/Documents/Claude/postador/UsersadriaDocumentsClaudepostador/.git /c/Users/adria/Documents/Claude/postador/)",
+      "WebFetch(domain:developers.openai.com)",
+      "WebFetch(domain:openai.com)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador status)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador remote -v)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/lib/image.ts)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador commit -m ' *)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador push origin main)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/lib/gemini.ts)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add package.json package-lock.json)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/lib/image.ts src/app/ManualTrigger.tsx)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/app/ManualTrigger.tsx)",
+      "Bash(xargs grep *)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/app/actions.ts src/app/page.tsx src/app/api/cron/route.ts src/lib/gemini.ts src/lib/image.ts)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/lib/gemini.ts src/lib/image.ts)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add prisma/)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add package.json)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/app/page.tsx)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/app/actions.ts src/app/page.tsx src/app/CleanPostsButton.tsx)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/app/api/image src/app/actions.ts)",
+      "Bash(npm install *)",
+      "Bash(git -C /c/Users/adria/Documents/Claude/postador add src/lib/image.ts src/app/page.tsx package.json package-lock.json)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(npm list *)"
+    ]
+  }
+}

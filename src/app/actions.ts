@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { postToInstagram } from "@/lib/instagram";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
+import { deleteImageFromFtp } from "@/lib/ftp";
 import { cookies, headers } from "next/headers";
 
 function checkAdminAuth(cookieStore: any) {
@@ -95,6 +96,9 @@ export async function deletePost(id: number) {
     const cookieStore = await cookies();
     checkAdminAuth(cookieStore);
 
+    const post = await prisma.post.findUnique({ where: { id }, select: { imageUrl: true } });
+    if (post?.imageUrl) await deleteImageFromFtp(post.imageUrl);
+
     await prisma.post.delete({ where: { id } });
     revalidatePath("/");
 }
@@ -103,9 +107,9 @@ export async function cleanErrorPosts() {
     const cookieStore = await cookies();
     checkAdminAuth(cookieStore);
 
-    const { count } = await prisma.post.deleteMany({
-        where: { status: "ERROR" },
-    });
+    const posts = await prisma.post.findMany({ where: { status: "ERROR" }, select: { id: true, imageUrl: true } });
+    await Promise.all(posts.map(p => deleteImageFromFtp(p.imageUrl)));
+    const { count } = await prisma.post.deleteMany({ where: { status: "ERROR" } });
 
     revalidatePath("/");
     return { count };
@@ -118,9 +122,9 @@ export async function cleanOldPosts() {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 15);
 
-    const { count } = await prisma.post.deleteMany({
-        where: { createdAt: { lt: cutoff } },
-    });
+    const posts = await prisma.post.findMany({ where: { createdAt: { lt: cutoff } }, select: { id: true, imageUrl: true } });
+    await Promise.all(posts.map(p => deleteImageFromFtp(p.imageUrl)));
+    const { count } = await prisma.post.deleteMany({ where: { createdAt: { lt: cutoff } } });
 
     revalidatePath("/");
     return { count };
