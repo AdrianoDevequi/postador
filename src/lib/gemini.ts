@@ -80,10 +80,11 @@ The prompt must describe:
 - A full 1:1 square canvas Instagram post graphic
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
-- ONE short bold headline in Portuguese (max 4 words), nothing else
-- NO subtitles, NO body text, NO bullet points, NO extra text elements
+- One bold headline in Portuguese (max 5 words)
+- Optionally 2-3 short bullet points or a subtitle (max 5 words each)
+- Keep text minimal and balanced — do NOT fill the image with text
 - Clean professional social media graphic design layout
-- NO logos, NO brand marks, NO icons
+- NO logos, NO brand marks
 - NO white space, fills entire canvas
 
 Output ONLY the image generation prompt in English, under 400 characters.`;
