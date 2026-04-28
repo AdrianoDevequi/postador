@@ -82,7 +82,7 @@ Create an English prompt for gpt-image-2 to generate a STYLIZED Instagram post d
 Brand: ${brandName}. Colors: ${colors}. Style: ${style}.${description ? ` About: ${description}.` : ""}
 
 The prompt must describe:
-- A full 1:1 square canvas Instagram post graphic
+- A 4:5 portrait format Instagram post graphic (taller than wide, like a phone screen)
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
 ${textRule}

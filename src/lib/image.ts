@@ -22,9 +22,9 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
                 model: "gpt-image-2",
                 prompt: fullPrompt,
                 n: 1,
-                size: "1024x1024",
+                size: "1024x1536",
                 output_format: "jpeg",
-                output_compression: 75,
+                output_compression: 85,
             },
             {
                 headers: {
@@ -36,7 +36,12 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
         const b64 = res.data?.data?.[0]?.b64_json;
         if (b64) {
             console.log("[image] ✅ Imagem gerada pela OpenAI (base64)");
-            const imageBuffer = Buffer.from(b64, "base64");
+            // Crop to 4:5 (1024x1280) centered — ideal for Instagram feed
+            const cropped = await sharp(Buffer.from(b64, "base64"))
+                .extract({ left: 0, top: 128, width: 1024, height: 1280 })
+                .jpeg({ quality: 85 })
+                .toBuffer();
+            const imageBuffer = cropped;
 
             if (brand.brand_logo_url && brand.brand_use_logo === "true") {
                 try {
@@ -56,7 +61,7 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
                 }
             }
 
-            return `data:image/jpeg;base64,${b64}`;
+            return `data:image/jpeg;base64,${imageBuffer.toString("base64")}`;
         }
     } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
