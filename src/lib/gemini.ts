@@ -84,7 +84,7 @@ The prompt must describe:
 - Optionally 2-3 short bullet points or a subtitle (max 5 words each)
 - Keep text minimal and balanced — do NOT fill the image with text
 - Clean professional social media graphic design layout
-- NO logos, NO brand marks
+- ABSOLUTELY NO logos, NO brand marks, NO company names, NO icons with text, NO badges — the image must have ZERO branding elements
 - NO white space, fills entire canvas
 
 Output ONLY the image generation prompt in English, under 400 characters.`;
