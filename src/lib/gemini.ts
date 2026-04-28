@@ -80,7 +80,8 @@ The prompt must describe:
 - A full 1:1 square canvas Instagram post graphic
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
-- Bold headline text in Portuguese summarizing the caption (max 6 words)
+- ONE short bold headline in Portuguese (max 4 words), nothing else
+- NO subtitles, NO body text, NO bullet points, NO extra text elements
 - Clean professional social media graphic design layout
 - NO logos, NO brand marks, NO icons
 - NO white space, fills entire canvas
