@@ -38,7 +38,8 @@ export async function GET(request: Request) {
             });
         }
 
-        const topic = config.value;
+        const topics = config.value.split("\n").map((t: string) => t.trim()).filter(Boolean);
+        const topic = topics[Math.floor(Math.random() * topics.length)];
 
         // Brand context
         const brandConfigs = await prisma.config.findMany({

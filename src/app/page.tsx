@@ -86,20 +86,19 @@ export default async function Home() {
 
           {/* Tópico */}
           <form action={updateTopic} className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Tema dos Posts</h3>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                name="topic"
-                id="topic"
-                defaultValue={config?.value || "Technology"}
-                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                placeholder="Ex: Criação de sites"
-              />
-              <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium transition-colors">
-                Salvar
-              </button>
-            </div>
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Temas dos Posts</h3>
+            <p className="text-xs text-gray-500 mb-2">Um tema por linha. O sistema escolhe aleatoriamente a cada post.</p>
+            <textarea
+              name="topic"
+              id="topic"
+              rows={4}
+              defaultValue={config?.value || "Technology"}
+              className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+              placeholder={"Google Ads\nCriação de sites\nSEO\nMarketing Digital"}
+            />
+            <button type="submit" className="mt-2 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium transition-colors">
+              Salvar
+            </button>
           </form>
 
           {/* Identidade de Marca */}
