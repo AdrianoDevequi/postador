@@ -89,6 +89,18 @@ export async function deletePost(id: number) {
     revalidatePath("/");
 }
 
+export async function cleanErrorPosts() {
+    const cookieStore = await cookies();
+    checkAdminAuth(cookieStore);
+
+    const { count } = await prisma.post.deleteMany({
+        where: { status: "ERROR" },
+    });
+
+    revalidatePath("/");
+    return { count };
+}
+
 export async function cleanOldPosts() {
     const cookieStore = await cookies();
     checkAdminAuth(cookieStore);

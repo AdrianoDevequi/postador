@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { updateTopic, updateBrandConfig, cleanOldPosts } from "./actions";
+import { updateTopic, updateBrandConfig, cleanOldPosts, cleanErrorPosts } from "./actions";
 import { CleanPostsButton } from "./CleanPostsButton";
 import { NextPostTimer } from "./NextPostTimer";
 import { ManualTrigger } from "./ManualTrigger";
@@ -39,7 +39,10 @@ export default async function Home() {
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Gerenciamento de Posts</h2>
-            <CleanPostsButton action={cleanOldPosts} />
+            <div className="flex gap-2">
+              <CleanPostsButton action={cleanErrorPosts} label="Limpar Erros" confirm="Deletar todos os posts com erro?" />
+              <CleanPostsButton action={cleanOldPosts} label="Limpar +15 dias" confirm="Deletar todos os posts com mais de 15 dias?" />
+            </div>
           </div>
           {posts.length === 0 ? (
             <p className="text-gray-500 italic">No posts yet.</p>
