@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { postToInstagram } from "@/lib/instagram";
+import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { cookies, headers } from "next/headers";
 
 function checkAdminAuth(cookieStore: any) {
@@ -69,11 +70,7 @@ export async function approvePost(id: number) {
         const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
         const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
 
-        const absoluteImageUrl = post.imageUrl.startsWith("data:")
-            ? `${baseUrl}/api/image/${post.id}`
-            : post.imageUrl.startsWith("/")
-                ? `${baseUrl}${post.imageUrl}`
-                : post.imageUrl;
+        const absoluteImageUrl = await resolveInstagramImageUrl(post.imageUrl, post.id, baseUrl);
 
         const igMediaId = await postToInstagram(absoluteImageUrl, post.caption);
         await prisma.post.update({

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const post = await prisma.post.findUnique({ where: { id: Number(id) } });
+    const post = await prisma.post.findUnique({ where: { id: Number(id) }, select: { imageUrl: true } });
 
     if (!post?.imageUrl) {
         return new NextResponse("Not found", { status: 404 });
@@ -18,7 +21,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         return new NextResponse(buffer, {
             headers: {
                 "Content-Type": mimeType,
-                "Cache-Control": "public, max-age=3600",
+                "Content-Length": buffer.length.toString(),
+                "Content-Disposition": "inline; filename=\"image.jpg\"",
+                "Cache-Control": "public, max-age=86400",
             },
         });
     }
