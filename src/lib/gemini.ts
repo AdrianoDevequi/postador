@@ -86,6 +86,7 @@ The prompt must describe:
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
 ${textRule}
+- All text and key elements must be inside a safe zone with at least 8% padding from all edges (Instagram crops edges on feed)
 - Clean professional social media graphic design layout
 - ABSOLUTELY NO logos, NO brand marks, NO company names, NO icons with text, NO badges — the image must have ZERO branding elements
 - NO white space, fills entire canvas
