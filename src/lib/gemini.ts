@@ -48,9 +48,11 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
     const prompt = `Haja como um Social Media experiente. O tema central do perfil é "${topic}".
     Hoje, eu preciso que você crie um post do tipo: **${randomType}** (mas relacionado ao tema central de alguma forma).
     Escreva uma legenda de Instagram envolvente e persuasiva em PORTUGUÊS DO BRASIL.
-    Use emojis e hashtags relevantes. Seja criativo, não repita os mesmos padrões de sempre. Mantenha abaixo de 1800 caracteres.${brandBlock}
+    Use poucos emojis (máximo 3-4 no total, apenas onde agregam valor) e hashtags relevantes. Seja criativo, não repita os mesmos padrões de sempre. Mantenha abaixo de 1800 caracteres.${brandBlock}
 
     REGRAS CRÍTICAS DE FORMATAÇÃO:
+    - NUNCA use asteriscos (**texto**) — o Instagram não renderiza markdown, fica feio.
+    - Use LETRAS MAIÚSCULAS para dar ênfase quando necessário, não asteriscos.
     - NÃO inclua nenhuma introdução conversacional (ex: "Uau! Adoro um desafio", "Aqui está o post:", "Claro!", etc).
     - NÃO inclua blocos sugerindo ideias de imagens ou carrossel no texto (ex: "[IMAGEM/CARROSSEL SUGERIDO]").
     - O seu retorno DEVE conter APENAS a legenda final do Instagram pronta para ser copiada e colada, nada mais.`;
