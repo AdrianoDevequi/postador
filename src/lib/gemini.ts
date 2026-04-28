@@ -81,8 +81,8 @@ The prompt must describe:
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
 - Bold headline text in Portuguese summarizing the caption (max 6 words)
-- Brand name "${brandName}" visible as a text label
 - Clean professional social media graphic design layout
+- NO logos, NO brand marks, NO icons
 - NO white space, fills entire canvas
 
 Output ONLY the image generation prompt in English, under 400 characters.`;
