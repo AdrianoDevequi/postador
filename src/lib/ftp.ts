@@ -6,7 +6,7 @@ const FTP_HOST = process.env.FTP_HOST || "104.156.48.234";
 const FTP_USER = process.env.FTP_USER || "adm.jupitersites.com.b_mx7847112";
 const FTP_PASSWORD = process.env.FTP_PASSWORD || "cIhoy8&kQ96&Khoj";
 const FTP_REMOTE_DIR = "/httpdocs/img-postador";
-const FTP_BASE_URL = "http://adm.jupitersites.com/img-postador";
+const FTP_BASE_URL = "https://adm.jupitersites.com/img-postador";
 
 function isFtpUrl(url: string) {
     return url.startsWith(FTP_BASE_URL);
