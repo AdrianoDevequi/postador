@@ -31,7 +31,7 @@ export async function updateBrandConfig(formData: FormData) {
     checkAdminAuth(cookieStore);
 
     const textFields = ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"];
-    const checkboxFields = ["brand_use_logo", "brand_less_text"];
+    const checkboxFields = ["brand_use_logo", "brand_less_text", "autopost"];
 
     for (const key of textFields) {
         const value = formData.get(key) as string;

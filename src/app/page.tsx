@@ -13,7 +13,7 @@ export default async function Home() {
   });
 
   const brandConfigs = await prisma.config.findMany({
-    where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra", "brand_use_logo", "brand_less_text"] } },
+    where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra", "brand_use_logo", "brand_less_text", "autopost"] } },
   });
   const brand = Object.fromEntries(brandConfigs.map((c: any) => [c.key, c.value]));
 
@@ -143,6 +143,10 @@ export default async function Home() {
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" name="brand_less_text" value="true" defaultChecked={brand.brand_less_text === "true"} className="w-4 h-4 rounded border-gray-300 text-indigo-600" />
                 <span className="text-sm font-medium text-gray-700">Menos texto (só título, sem bullets)</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="checkbox" name="autopost" value="true" defaultChecked={brand.autopost === "true"} className="w-4 h-4 rounded border-gray-300 text-indigo-600" />
+                <span className="text-sm font-medium text-gray-700">Autopost <span className="text-gray-400 font-normal">(criar e publicar automaticamente no Instagram)</span></span>
               </label>
             </div>
 

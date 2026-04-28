@@ -41,9 +41,10 @@ export async function GET(request: Request) {
 
         // Brand context
         const brandConfigs = await prisma.config.findMany({
-            where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"] } },
+            where: { key: { in: ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra", "brand_use_logo", "brand_less_text", "autopost"] } },
         });
         const brand = Object.fromEntries(brandConfigs.map((c: any) => [c.key, c.value]));
+        const autopost = brand.autopost === "true";
 
         // 2. Generate Content
         let caption = "";
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
             generationError = e.message || "Failed to generate content";
         }
 
-        // 4. Save to DB directly as DRAFT or ERROR
+        // 4. Save to DB as DRAFT or ERROR
         const post = await prisma.post.create({
             data: {
                 caption: caption || `Falha na geração para o tema: ${topic}`,
@@ -78,6 +79,38 @@ export async function GET(request: Request) {
 
         if (generationError) {
             return NextResponse.json({ success: false, post, error: generationError }, { status: 500 });
+        }
+
+        // 5. Auto-publish if autopost is enabled
+        if (autopost) {
+            try {
+                const { headers } = await import("next/headers");
+                const headersList = await headers();
+                const host = headersList.get("host") || "localhost:3000";
+                const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+                const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
+
+                const absoluteImageUrl = post.imageUrl.startsWith("data:")
+                    ? `${baseUrl}/api/image/${post.id}`
+                    : post.imageUrl.startsWith("/")
+                        ? `${baseUrl}${post.imageUrl}`
+                        : post.imageUrl;
+
+                const igMediaId = await postToInstagram(absoluteImageUrl, post.caption);
+                await prisma.post.update({
+                    where: { id: post.id },
+                    data: { published: true, status: "PUBLISHED", igMediaId, error: null },
+                });
+                return NextResponse.json({ success: true, autoposted: true, postId: post.id });
+            } catch (e: any) {
+                const raw = e.response?.data || e.message || "Unknown error";
+                const errorMsg = typeof raw === "string" ? raw : JSON.stringify(raw);
+                await prisma.post.update({
+                    where: { id: post.id },
+                    data: { status: "ERROR", error: errorMsg },
+                });
+                return NextResponse.json({ success: false, autopost_error: errorMsg, postId: post.id }, { status: 500 });
+            }
         }
 
         return NextResponse.json({ success: true, post, debug: { force, env: process.env.NODE_ENV } });
