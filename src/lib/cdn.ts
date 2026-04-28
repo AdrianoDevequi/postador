@@ -1,36 +1,48 @@
 import axios from "axios";
+import crypto from "crypto";
 import { isFtpImageUrl, downloadImageFromFtp } from "./ftp";
 
-const IMGBB_API_KEY = process.env.IMGBB_API_KEY || "";
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "";
+const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
 
-export async function uploadToImgBB(base64DataUrl: string): Promise<string | null> {
-    if (!IMGBB_API_KEY) return null;
+async function uploadToCloudinary(base64DataUrl: string): Promise<string | null> {
+    if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) return null;
+
     try {
-        const base64 = base64DataUrl.split(",")[1];
-        const form = new URLSearchParams();
-        form.append("key", IMGBB_API_KEY);
-        form.append("image", base64);
+        const timestamp = Math.round(Date.now() / 1000).toString();
+        const signature = crypto
+            .createHash("sha1")
+            .update(`timestamp=${timestamp}${CLOUDINARY_API_SECRET}`)
+            .digest("hex");
 
-        const res = await axios.post("https://api.imgbb.com/1/upload", form.toString(), {
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            timeout: 30000,
-        });
+        const form = new FormData();
+        form.append("file", base64DataUrl);
+        form.append("timestamp", timestamp);
+        form.append("api_key", CLOUDINARY_API_KEY);
+        form.append("signature", signature);
 
-        const url = res.data?.data?.url;
+        const res = await axios.post(
+            `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+            form,
+            { timeout: 60000 }
+        );
+
+        const url = res.data?.secure_url;
         if (url) {
-            console.log("[cdn] ✅ Imagem enviada para ImgBB:", url);
+            console.log("[cdn] ✅ Imagem enviada para Cloudinary:", url);
             return url;
         }
     } catch (e: any) {
-        console.error("[cdn] ImgBB falhou:", e.response?.data || e.message);
+        console.error("[cdn] Cloudinary falhou:", e.response?.data || e.message);
     }
     return null;
 }
 
 /**
  * Resolves the public URL for Instagram.
- * - data: URL → upload to ImgBB
- * - FTP URL → download from FTP → upload to ImgBB
+ * - data: URL → upload to Cloudinary
+ * - FTP URL → download from FTP → upload to Cloudinary
  * - Other URLs → return as-is
  */
 export async function resolveInstagramImageUrl(imageUrl: string, postId: number, baseUrl: string): Promise<string> {
@@ -40,9 +52,7 @@ export async function resolveInstagramImageUrl(imageUrl: string, postId: number,
         dataUrl = imageUrl;
     } else if (isFtpImageUrl(imageUrl)) {
         const filename = imageUrl.split("/").pop();
-        if (filename) {
-            dataUrl = await downloadImageFromFtp(filename);
-        }
+        if (filename) dataUrl = await downloadImageFromFtp(filename);
     } else if (imageUrl.startsWith("/")) {
         return `${baseUrl}${imageUrl}`;
     } else {
@@ -50,10 +60,9 @@ export async function resolveInstagramImageUrl(imageUrl: string, postId: number,
     }
 
     if (dataUrl) {
-        const cdnUrl = await uploadToImgBB(dataUrl);
+        const cdnUrl = await uploadToCloudinary(dataUrl);
         if (cdnUrl) return cdnUrl;
     }
 
-    // Last resort: serve from our own API route
     return `${baseUrl}/api/image/${postId}`;
 }
