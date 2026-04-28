@@ -43,10 +43,10 @@ export default async function Home() {
             <div className="space-y-6">
               {posts.map((post: any) => (
                 <div key={post.id} className="flex gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                  <div className="w-32 h-32 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden relative">
+                  <a href={post.imageUrl} target="_blank" rel="noopener noreferrer" className="w-32 h-32 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden relative block hover:opacity-80 transition-opacity cursor-zoom-in">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={post.imageUrl} alt="Generated" className="object-cover w-full h-full" />
-                  </div>
+                  </a>
                   <div className="flex-1">
                     <div className="flex justify-between items-start mb-2">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${post.status === 'PUBLISHED' ? 'bg-green-100 text-green-800' : post.status === 'ERROR' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
