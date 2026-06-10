@@ -14,6 +14,38 @@ model Config {
   updatedAt DateTime @updatedAt
 }
 
+model Profile {
+  id          Int     @id @default(autoincrement())
+  name        String
+
+  // Instagram credentials (fallback to env vars when empty — for the legacy default profile)
+  igUserId       String    @default("")
+  igUsername     String?
+  accessToken    String    @default("") @db.Text
+  tokenExpiresAt DateTime?
+
+  // Content
+  topics      String  @db.Text @default("Technology")
+
+  // Brand identity
+  brandName        String?
+  brandDescription String? @db.Text
+  brandColors      String?
+  brandStyle       String?
+  brandLogoUrl     String? @db.Text
+  brandExtra       String? @db.Text
+  linkUrl          String?
+  useLogo          Boolean @default(false)
+  lessText         Boolean @default(false)
+
+  // Behaviour
+  autopost    Boolean  @default(false)
+  active      Boolean  @default(true)
+
+  posts       Post[]
+  createdAt   DateTime @default(now())
+}
+
 model Post {
   id        Int      @id @default(autoincrement())
   caption   String   @db.Text
@@ -23,4 +55,9 @@ model Post {
   status    String   @default("DRAFT")
   error     String?  @db.Text
   createdAt DateTime @default(now())
+
+  profileId Int      @default(1)
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
 }

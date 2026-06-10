@@ -1,31 +1,64 @@
 import axios from "axios";
 
-const IG_USER_ID = process.env.INSTAGRAM_USER_ID;
-const ACCESS_TOKEN = process.env.INSTAGRAM_ACCESS_TOKEN;
 const BASE_URL = "https://graph.facebook.com/v22.0";
 
-export async function postToInstagram(imageUrl: string, caption: string): Promise<string> {
-    if (!IG_USER_ID || !ACCESS_TOKEN) {
+export interface IgCredentials {
+    igUserId: string;
+    accessToken: string;
+}
+
+/**
+ * Asks the Graph API when this token expires (via debug_token).
+ * Returns:
+ *   - a Date when the token has a known expiry
+ *   - null when it never expires (expires_at = 0) or the lookup fails
+ *     (callers fall back to an estimate in that case)
+ */
+export async function fetchTokenExpiry(token: string): Promise<Date | null> {
+    if (!token) return null;
+    try {
+        const res = await axios.get(`${BASE_URL}/debug_token`, {
+            params: { input_token: token, access_token: token },
+        });
+        const expiresAt = res.data?.data?.expires_at;
+        if (typeof expiresAt === "number" && expiresAt > 0) {
+            return new Date(expiresAt * 1000);
+        }
+    } catch (e: any) {
+        console.error("[instagram] debug_token falhou:", e.response?.data || e.message);
+    }
+    return null;
+}
+
+export async function postToInstagram(
+    imageUrl: string,
+    caption: string,
+    creds?: IgCredentials
+): Promise<string> {
+    const igUserId = creds?.igUserId || process.env.INSTAGRAM_USER_ID;
+    const accessToken = creds?.accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
+
+    if (!igUserId || !accessToken) {
         throw new Error("Instagram credentials not configured");
     }
 
     try {
         // Step 1: Create Media Container
-        const containerResponse = await axios.post(`${BASE_URL}/${IG_USER_ID}/media`, null, {
+        const containerResponse = await axios.post(`${BASE_URL}/${igUserId}/media`, null, {
             params: {
                 image_url: imageUrl,
                 caption: caption,
-                access_token: ACCESS_TOKEN,
+                access_token: accessToken,
             },
         });
 
         const creationId = containerResponse.data.id;
 
         // Step 2: Publish Media
-        const publishResponse = await axios.post(`${BASE_URL}/${IG_USER_ID}/media_publish`, null, {
+        const publishResponse = await axios.post(`${BASE_URL}/${igUserId}/media_publish`, null, {
             params: {
                 creation_id: creationId,
-                access_token: ACCESS_TOKEN,
+                access_token: accessToken,
             },
         });
 

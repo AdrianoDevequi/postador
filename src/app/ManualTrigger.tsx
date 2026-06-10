@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function ManualTrigger() {
+export function ManualTrigger({ profileId }: { profileId: number }) {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState("");
     const [result, setResult] = useState<any>(null);
@@ -32,7 +32,7 @@ export function ManualTrigger() {
         }, 2500);
 
         try {
-            const response = await fetch("/api/cron?force=true");
+            const response = await fetch(`/api/cron?force=true&profileId=${profileId}`);
             const data = await response.json();
 
             clearInterval(interval);

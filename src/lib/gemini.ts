@@ -58,7 +58,8 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
     - O seu retorno DEVE conter APENAS a legenda final do Instagram pronta para ser copiada e colada, nada mais.`;
 
     const text = await chat(prompt);
-    return text + "\n\nhttps://jupitersites.com.br/";
+    const link = brand.brand_link || "https://jupitersites.com.br/";
+    return link ? `${text}\n\n${link}` : text;
   } catch (error) {
     console.error("Error generating caption:", error);
     throw new Error("Failed to generate caption");

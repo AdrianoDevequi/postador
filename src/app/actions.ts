@@ -2,67 +2,122 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { postToInstagram } from "@/lib/instagram";
+import { redirect } from "next/navigation";
+import { postToInstagram, fetchTokenExpiry } from "@/lib/instagram";
+import { getIgCreds } from "@/lib/profile";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { deleteImageFromFtp } from "@/lib/ftp";
 import { cookies, headers } from "next/headers";
 
-function checkAdminAuth(cookieStore: any) {
+async function checkAdminAuth() {
+    const cookieStore = await cookies();
     const isAdmin = cookieStore.get("admin_session")?.value === process.env.ADMIN_PASSWORD;
     if (!isAdmin) throw new Error("Unauthorized");
 }
 
-export async function updateTopic(formData: FormData) {
-    const topic = formData.get("topic") as string;
-    if (!topic) return;
+// ---------------------------------------------------------------------------
+// Profile CRUD
+// ---------------------------------------------------------------------------
 
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+function parseProfileForm(formData: FormData) {
+    const str = (k: string) => {
+        const v = formData.get(k);
+        return typeof v === "string" ? v.trim() : "";
+    };
+    const bool = (k: string) => formData.get(k) === "true";
 
-    await prisma.config.upsert({
-        where: { key: "post_topic" },
-        update: { value: topic },
-        create: { key: "post_topic", value: topic },
-    });
+    return {
+        name: str("name") || "Novo Perfil",
+        igUserId: str("igUserId"),
+        igUsername: str("igUsername") || null,
+        accessToken: str("accessToken"),
+        topics: str("topics") || "Technology",
+        brandName: str("brandName") || null,
+        brandDescription: str("brandDescription") || null,
+        brandColors: str("brandColors") || null,
+        brandStyle: str("brandStyle") || null,
+        brandLogoUrl: str("brandLogoUrl") || null,
+        brandExtra: str("brandExtra") || null,
+        linkUrl: str("linkUrl") || null,
+        useLogo: bool("useLogo"),
+        lessText: bool("lessText"),
+        autopost: bool("autopost"),
+        active: formData.get("active") === null ? true : bool("active"),
+    };
+}
 
+/**
+ * Token expiry: real value from Graph API when available, otherwise 60 days
+ * from now (the default lifetime of a long-lived Instagram token).
+ */
+async function resolveTokenExpiry(token: string): Promise<Date> {
+    const real = await fetchTokenExpiry(token);
+    if (real) return real;
+    const estimate = new Date();
+    estimate.setDate(estimate.getDate() + 60);
+    return estimate;
+}
+
+export async function createProfile(formData: FormData) {
+    await checkAdminAuth();
+
+    const data = parseProfileForm(formData);
+    const tokenExpiresAt = data.accessToken ? await resolveTokenExpiry(data.accessToken) : null;
+    const profile = await prisma.profile.create({ data: { ...data, tokenExpiresAt } });
+
+    revalidatePath("/");
+    redirect(`/?profile=${profile.id}`);
+}
+
+export async function updateProfile(formData: FormData) {
+    await checkAdminAuth();
+
+    const id = Number(formData.get("id"));
+    if (!id) throw new Error("Missing profile id");
+
+    const data = parseProfileForm(formData);
+
+    // Don't blow away a saved token if the field was left blank (it's masked in the UI)
+    if (!data.accessToken) {
+        const { accessToken, ...rest } = data;
+        void accessToken;
+        await prisma.profile.update({ where: { id }, data: rest });
+    } else {
+        // New token provided → refresh its expiry from the Graph API
+        const tokenExpiresAt = await resolveTokenExpiry(data.accessToken);
+        await prisma.profile.update({ where: { id }, data: { ...data, tokenExpiresAt } });
+    }
+
+    revalidatePath("/");
+    redirect(`/?profile=${id}`);
+}
+
+export async function toggleProfileActive(id: number, active: boolean) {
+    await checkAdminAuth();
+    await prisma.profile.update({ where: { id }, data: { active } });
     revalidatePath("/");
 }
 
-export async function updateBrandConfig(formData: FormData) {
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+export async function deleteProfile(id: number) {
+    await checkAdminAuth();
 
-    const textFields = ["brand_name", "brand_description", "brand_colors", "brand_style", "brand_logo_url", "brand_extra"];
-    const checkboxFields = ["brand_use_logo", "brand_less_text", "autopost"];
+    // Clean up any FTP-hosted images for this profile's posts
+    const posts = await prisma.post.findMany({ where: { profileId: id }, select: { imageUrl: true } });
+    await Promise.all(posts.map((p) => deleteImageFromFtp(p.imageUrl)));
 
-    for (const key of textFields) {
-        const value = formData.get(key) as string;
-        if (value !== null) {
-            await prisma.config.upsert({
-                where: { key },
-                update: { value },
-                create: { key, value },
-            });
-        }
-    }
-
-    for (const key of checkboxFields) {
-        const value = formData.get(key) === "true" ? "true" : "false";
-        await prisma.config.upsert({
-            where: { key },
-            update: { value },
-            create: { key, value },
-        });
-    }
-
+    await prisma.profile.delete({ where: { id } });
     revalidatePath("/");
+    redirect("/");
 }
+
+// ---------------------------------------------------------------------------
+// Post actions
+// ---------------------------------------------------------------------------
 
 export async function approvePost(id: number) {
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+    await checkAdminAuth();
 
-    const post = await prisma.post.findUnique({ where: { id } });
+    const post = await prisma.post.findUnique({ where: { id }, include: { profile: true } });
     if (!post || post.published) return { error: "Post not found or already published" };
 
     try {
@@ -73,7 +128,7 @@ export async function approvePost(id: number) {
 
         const absoluteImageUrl = await resolveInstagramImageUrl(post.imageUrl, post.id, baseUrl);
 
-        const igMediaId = await postToInstagram(absoluteImageUrl, post.caption);
+        const igMediaId = await postToInstagram(absoluteImageUrl, post.caption, getIgCreds(post.profile));
         await prisma.post.update({
             where: { id },
             data: { published: true, status: "PUBLISHED", igMediaId, error: null },
@@ -93,8 +148,7 @@ export async function approvePost(id: number) {
 }
 
 export async function resetPostToDraft(id: number) {
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+    await checkAdminAuth();
 
     await prisma.post.update({
         where: { id },
@@ -105,8 +159,7 @@ export async function resetPostToDraft(id: number) {
 }
 
 export async function deletePost(id: number) {
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+    await checkAdminAuth();
 
     const post = await prisma.post.findUnique({ where: { id }, select: { imageUrl: true } });
     if (post?.imageUrl) await deleteImageFromFtp(post.imageUrl);
@@ -115,28 +168,28 @@ export async function deletePost(id: number) {
     revalidatePath("/");
 }
 
-export async function cleanErrorPosts() {
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+export async function cleanErrorPosts(profileId: number) {
+    await checkAdminAuth();
 
-    const posts = await prisma.post.findMany({ where: { status: "ERROR" }, select: { id: true, imageUrl: true } });
-    await Promise.all(posts.map(p => deleteImageFromFtp(p.imageUrl)));
-    const { count } = await prisma.post.deleteMany({ where: { status: "ERROR" } });
+    const where = { status: "ERROR", profileId };
+    const posts = await prisma.post.findMany({ where, select: { id: true, imageUrl: true } });
+    await Promise.all(posts.map((p) => deleteImageFromFtp(p.imageUrl)));
+    const { count } = await prisma.post.deleteMany({ where });
 
     revalidatePath("/");
     return { count };
 }
 
-export async function cleanOldPosts() {
-    const cookieStore = await cookies();
-    checkAdminAuth(cookieStore);
+export async function cleanOldPosts(profileId: number) {
+    await checkAdminAuth();
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 15);
 
-    const posts = await prisma.post.findMany({ where: { createdAt: { lt: cutoff } }, select: { id: true, imageUrl: true } });
-    await Promise.all(posts.map(p => deleteImageFromFtp(p.imageUrl)));
-    const { count } = await prisma.post.deleteMany({ where: { createdAt: { lt: cutoff } } });
+    const where = { createdAt: { lt: cutoff }, profileId };
+    const posts = await prisma.post.findMany({ where, select: { id: true, imageUrl: true } });
+    await Promise.all(posts.map((p) => deleteImageFromFtp(p.imageUrl)));
+    const { count } = await prisma.post.deleteMany({ where });
 
     revalidatePath("/");
     return { count };
