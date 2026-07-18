@@ -6,9 +6,10 @@ import { PostActions } from "./PostActions";
 import { ProfileForm } from "./ProfileForm";
 import { DeleteProfileButton } from "./ProfileControls";
 import { TokenStatusBadge } from "./TokenStatusBadge";
-import { getTokenStatus, describeSchedule } from "@/lib/profile";
+import { getTokenStatus, describeSchedule, nextScheduledRun } from "@/lib/profile";
 import { AppShell } from "./ui/AppShell";
 import { StatCard } from "./ui/StatCard";
+import { NextPostCountdown } from "./ui/NextPostCountdown";
 
 export const dynamic = "force-dynamic";
 
@@ -108,11 +109,10 @@ export default async function Home({
           <StatCard color="teal" label="Publicados" value={String(publishedCount)} footer="No Instagram" />
           <StatCard color="blue" label="Rascunhos" value={String(draftCount)} footer="Aguardando aprovação" />
           <StatCard color="pink" label="Com erro" value={String(errorCount)} footer="Precisam de atenção" />
-          <StatCard
-            color="violet"
-            label="Agendamento"
-            value={selected.active ? "Ativo" : "Pausado"}
-            footer={describeSchedule(selected)}
+          <NextPostCountdown
+            nextRunMs={nextScheduledRun(selected)?.getTime() ?? null}
+            scheduleLabel={describeSchedule(selected)}
+            active={selected.active}
           />
         </div>
 

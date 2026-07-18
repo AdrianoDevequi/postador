@@ -138,6 +138,37 @@ export function isScheduledDue(
     return false;
 }
 
+/** Adds `d` days to a YYYY-MM-DD string (via UTC noon to dodge DST/boundaries). */
+function addDaysToDateStr(dateStr: string, d: number): string {
+    const dt = new Date(`${dateStr}T12:00:00Z`);
+    dt.setUTCDate(dt.getUTCDate() + d);
+    return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * The next moment (as a Date) this profile is scheduled to post, or null when
+ * there's no upcoming slot. Looks up to 7 days ahead. America/Sao_Paulo.
+ */
+export function nextScheduledRun(
+    p: Pick<Profile, "scheduleDays" | "scheduleTimes">,
+    now: Date = new Date()
+): Date | null {
+    const { days, times } = parseSchedule(p);
+    if (!days.length || !times.length) return null;
+
+    const { dateStr, weekday } = nowInSaoPaulo(now);
+    let best: Date | null = null;
+    for (let d = 0; d <= 7; d++) {
+        if (!days.includes((weekday + d) % 7)) continue;
+        const ds = addDaysToDateStr(dateStr, d);
+        for (const t of times) {
+            const slot = new Date(`${ds}T${t}:00-03:00`);
+            if (slot.getTime() > now.getTime() && (!best || slot < best)) best = slot;
+        }
+    }
+    return best;
+}
+
 /** Human summary of a schedule, e.g. "Seg, Qua, Sex às 09:00, 18:00". */
 export function describeSchedule(p: SchedulePick): string {
     const { days, times } = parseSchedule(p);
