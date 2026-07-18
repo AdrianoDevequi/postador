@@ -1,6 +1,19 @@
 import { createProfile, updateProfile } from "./actions";
 import type { Profile } from "@prisma/client";
 
+function HelpTip({ children }: { children: React.ReactNode }) {
+    return (
+        <span className="relative inline-flex group align-middle ml-1.5">
+            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 text-white text-[10px] font-bold cursor-help select-none">
+                ?
+            </span>
+            <span className="pointer-events-none group-hover:pointer-events-auto absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-72 z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg bg-gray-900 text-white text-xs font-normal leading-relaxed p-3 shadow-lg">
+                {children}
+            </span>
+        </span>
+    );
+}
+
 export function ProfileForm({ profile }: { profile?: Profile }) {
     const isEdit = !!profile;
     const action = isEdit ? updateProfile : createProfile;
@@ -25,9 +38,40 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
             <fieldset className="border border-gray-200 rounded-lg p-4 space-y-4">
                 <legend className="text-sm font-semibold text-gray-700 px-2">Conexão com o Instagram</legend>
 
+                {/* Automatic connect via Facebook Login — fills ID + token below */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+                    <a
+                        href={isEdit ? `/api/auth/instagram?profileId=${profile.id}` : "/api/auth/instagram"}
+                        className="inline-flex items-center justify-center gap-2 bg-[#1877F2] text-white px-4 py-2 rounded-md hover:bg-[#166fe0] text-sm font-medium transition-colors flex-shrink-0"
+                    >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z" />
+                        </svg>
+                        {isEdit ? "Reconectar com Instagram" : "Conectar com Instagram"}
+                    </a>
+                    <p className="text-xs text-gray-500">
+                        Faça login com o Facebook e o ID e o token abaixo são preenchidos automaticamente.
+                        {" "}Ou informe manualmente.
+                    </p>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Instagram Business Account ID</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Instagram Business Account ID
+                            <HelpTip>
+                                O ID numérico (começa com <span className="font-mono">17841...</span>) da sua conta Instagram Business.
+                                <br />
+                                Sua conta precisa ser <b>Business/Creator</b> e estar vinculada a uma Página do Facebook.
+                                <br />
+                                Pegue no{" "}
+                                <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" className="underline text-indigo-300">
+                                    Graph API Explorer
+                                </a>{" "}
+                                chamando <span className="font-mono">me/accounts</span> e depois{" "}
+                                <span className="font-mono">{"{page-id}?fields=instagram_business_account"}</span>.
+                            </HelpTip>
+                        </label>
                         <input
                             type="text"
                             name="igUserId"
@@ -51,6 +95,24 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                         Access Token (long-lived)
+                        <HelpTip>
+                            Token de acesso de longa duração (60 dias, começa com <span className="font-mono">EAAG...</span>).
+                            <br />
+                            No{" "}
+                            <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" className="underline text-indigo-300">
+                                Graph API Explorer
+                            </a>{" "}
+                            gere um token com as permissões <span className="font-mono">instagram_basic</span>,{" "}
+                            <span className="font-mono">instagram_content_publish</span>,{" "}
+                            <span className="font-mono">pages_show_list</span> e{" "}
+                            <span className="font-mono">pages_read_engagement</span>.
+                            <br />
+                            Depois troque por um de longa duração seguindo o{" "}
+                            <a href="https://developers.facebook.com/docs/instagram-api/getting-started" target="_blank" rel="noopener noreferrer" className="underline text-indigo-300">
+                                guia oficial
+                            </a>
+                            .
+                        </HelpTip>
                         {isEdit && profile?.accessToken && (
                             <span className="text-green-600 font-normal"> — já salvo (deixe vazio para manter)</span>
                         )}

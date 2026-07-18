@@ -7,6 +7,8 @@ import { postToInstagram, fetchTokenExpiry } from "@/lib/instagram";
 import { getIgCreds } from "@/lib/profile";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { deleteImageFromFtp } from "@/lib/ftp";
+import { persistConnectedAccount, OAUTH_PENDING_COOKIE } from "@/lib/connect";
+import type { DiscoveredAccount } from "@/lib/facebook-oauth";
 import { cookies, headers } from "next/headers";
 
 async function checkAdminAuth() {
@@ -90,6 +92,30 @@ export async function updateProfile(formData: FormData) {
 
     revalidatePath("/");
     redirect(`/?profile=${id}`);
+}
+
+/**
+ * Saves the Instagram account the admin picked on the /connect page.
+ * Reads the pending accounts from the httpOnly cookie set during the OAuth
+ * callback, so tokens never round-trip through the page HTML.
+ */
+export async function confirmConnectedAccount(formData: FormData) {
+    await checkAdminAuth();
+
+    const index = Number(formData.get("index"));
+    const store = await cookies();
+    const raw = store.get(OAUTH_PENDING_COOKIE)?.value;
+    if (!raw) throw new Error("Sessão de conexão expirada. Refaça o login com o Instagram.");
+
+    const pending = JSON.parse(raw) as { profileId: number | null; accounts: DiscoveredAccount[] };
+    const account = pending.accounts[index];
+    if (!account) throw new Error("Conta inválida.");
+
+    const id = await persistConnectedAccount(pending.profileId ?? null, account);
+
+    store.delete(OAUTH_PENDING_COOKIE);
+    revalidatePath("/");
+    redirect(`/?profile=${id}&connected=1`);
 }
 
 export async function toggleProfileActive(id: number, active: boolean) {

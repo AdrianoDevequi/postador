@@ -12,8 +12,12 @@ import { getTokenStatus } from "@/lib/profile";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ profile?: string }> }) {
-  const { profile: profileParam } = await searchParams;
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ profile?: string; connected?: string; connect_error?: string }>;
+}) {
+  const { profile: profileParam, connected, connect_error: connectError } = await searchParams;
 
   const profiles = await prisma.profile.findMany({ orderBy: { id: "asc" } });
 
@@ -36,6 +40,19 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
         <header className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Instagram Autopost</h1>
         </header>
+
+        {connected && (
+          <div className="rounded-lg p-4 bg-green-50 border-l-4 border-green-500">
+            <p className="font-semibold text-green-800">✅ Instagram conectado com sucesso</p>
+            <p className="text-sm text-green-700 mt-1">O ID e o token foram preenchidos e salvos automaticamente.</p>
+          </div>
+        )}
+        {connectError && (
+          <div className="rounded-lg p-4 bg-red-50 border-l-4 border-red-500">
+            <p className="font-semibold text-red-800">Não foi possível conectar</p>
+            <p className="text-sm text-red-700 mt-1">{connectError}</p>
+          </div>
+        )}
 
         {/* Profile selector tabs */}
         <div className="flex flex-wrap items-center gap-2">
