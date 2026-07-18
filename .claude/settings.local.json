@@ -63,7 +63,12 @@
       "Bash(git mv *)",
       "Bash(git rm *)",
       "Bash(node check_styles.mjs)",
-      "Bash(node reset_styles.mjs)"
+      "Bash(node reset_styles.mjs)",
+      "Bash(node check_sched.mjs)",
+      "Bash(node check2.mjs)",
+      "Bash(node check3.mjs)",
+      "Bash(git restore *)",
+      "Bash(git commit *)"
     ]
   }
 }
