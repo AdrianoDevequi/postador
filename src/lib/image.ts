@@ -152,7 +152,7 @@ async function downloadEnvatoElements(term: string): Promise<string | null> {
  *   2. Envato API / PhotoDune (preview com watermark)
  *   3. Unsplash (fallback gratuito)
  *
- * @param prompt - Termo de busca gerado pelo Gemini
+ * @param prompt - Termo de busca gerado pelo ChatGPT (gpt-4o-mini)
  * @returns URL (http) ou caminho local do arquivo de imagem
  */
 export async function generateImageUrl(prompt: string, brand: BrandContext = {}): Promise<string> {

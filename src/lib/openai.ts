@@ -73,12 +73,27 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
  * them when it compresses the prompt.
  */
 function buildDesignBlock(brand: BrandContext): string {
+  let block = "";
+
+  // Art style: the profile can pick several — we choose one at random per post
+  // so the feed stays varied while sticking to the chosen looks.
+  if (brand.design_image_styles) {
+    const styles = brand.design_image_styles
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (styles.length) {
+      const chosen = styles[Math.floor(Math.random() * styles.length)];
+      block += ` Overall art style: ${chosen}.`;
+    }
+  }
+
   const parts: string[] = [];
   if (brand.design_font_style) parts.push(`headline font ${brand.design_font_style}`);
   if (brand.design_font_size) parts.push(`headline size ${brand.design_font_size}`);
   if (brand.design_font_color) parts.push(`text color ${brand.design_font_color}`);
   if (brand.design_effects) parts.push(`text effects ${brand.design_effects}`);
-  let block = parts.length ? ` Typography: ${parts.join(", ")}.` : "";
+  if (parts.length) block += ` Typography: ${parts.join(", ")}.`;
   if (brand.design_notes) block += ` Extra design direction: ${brand.design_notes}.`;
   return block;
 }

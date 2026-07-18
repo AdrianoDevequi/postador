@@ -14,9 +14,28 @@ function HelpTip({ children }: { children: React.ReactNode }) {
     );
 }
 
+const IMAGE_STYLES: { value: string; label: string }[] = [
+    { value: "photorealistic photography", label: "Fotorrealista" },
+    { value: "digital illustration", label: "Ilustração digital" },
+    { value: "3D render", label: "3D render" },
+    { value: "flat minimalist vector design", label: "Flat / minimalista" },
+    { value: "watercolor painting", label: "Aquarela" },
+    { value: "retro pixel art, 8-bit", label: "Pixel art / 8-bit" },
+    { value: "anime manga style", label: "Anime / mangá" },
+    { value: "bold vibrant pop art", label: "Pop art vibrante" },
+    { value: "playful cartoon illustration", label: "Cartoon" },
+    { value: "magazine editorial collage", label: "Revista / colagem" },
+];
+
 export function ProfileForm({ profile }: { profile?: Profile }) {
     const isEdit = !!profile;
     const action = isEdit ? updateProfile : createProfile;
+    const selectedStyles = new Set(
+        (profile?.designImageStyles || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+    );
 
     return (
         <form action={action} className="space-y-5">
@@ -191,6 +210,30 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                 <p className="text-xs text-gray-500 -mt-1">
                     Opcional. Guia a IA na hora de gerar o layout do post. Deixe vazio para a IA decidir.
                 </p>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Estilo da imagem
+                        <span className="text-gray-400 font-normal"> (escolha um ou vários — sorteamos um por post)</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                        {IMAGE_STYLES.map((s) => (
+                            <label
+                                key={s.value}
+                                className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-1.5 text-sm cursor-pointer hover:border-indigo-300 has-[:checked]:bg-indigo-600 has-[:checked]:text-white has-[:checked]:border-indigo-600 transition-colors"
+                            >
+                                <input
+                                    type="checkbox"
+                                    name="designImageStyles"
+                                    value={s.value}
+                                    defaultChecked={selectedStyles.has(s.value)}
+                                    className="sr-only"
+                                />
+                                {s.label}
+                            </label>
+                        ))}
+                    </div>
+                </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

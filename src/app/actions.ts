@@ -46,6 +46,11 @@ function parseProfileForm(formData: FormData) {
         designFontColor: str("designFontColor") || null,
         designEffects: str("designEffects") || null,
         designNotes: str("designNotes") || null,
+        designImageStyles:
+            formData
+                .getAll("designImageStyles")
+                .filter((v): v is string => typeof v === "string" && v.trim() !== "")
+                .join(", ") || null,
         useLogo: bool("useLogo"),
         lessText: bool("lessText"),
         autopost: bool("autopost"),

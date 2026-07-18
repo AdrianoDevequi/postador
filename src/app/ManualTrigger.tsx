@@ -9,13 +9,13 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
     const [error, setError] = useState("");
 
     const steps = [
-        "Contacting Gemini AI...",
-        "Brainstorming Caption...",
-        "Designing Image Prompt...",
-        "Generating Image (Pollinations)...",
-        "Connecting to Instagram...",
-        "Publishing Post...",
-        "Finalizing..."
+        "Conectando ao ChatGPT...",
+        "Criando a legenda...",
+        "Montando o prompt da imagem...",
+        "Gerando a imagem (gpt-image)...",
+        "Conectando ao Instagram...",
+        "Publicando o post...",
+        "Finalizando..."
     ];
 
     const handleTrigger = async () => {

@@ -2,7 +2,7 @@ import type { Profile } from "@prisma/client";
 
 /**
  * Converts a Profile row into the `Record<string,string>` brand-context shape
- * that gemini.ts and image.ts already expect (keys like `brand_name`,
+ * that openai.ts and image.ts already expect (keys like `brand_name`,
  * `brand_use_logo`, etc). This keeps the generation libs untouched.
  */
 export function profileToBrand(p: Profile): Record<string, string> {
@@ -21,6 +21,7 @@ export function profileToBrand(p: Profile): Record<string, string> {
         design_font_color: p.designFontColor ?? "",
         design_effects: p.designEffects ?? "",
         design_notes: p.designNotes ?? "",
+        design_image_styles: p.designImageStyles ?? "",
     };
 }
 

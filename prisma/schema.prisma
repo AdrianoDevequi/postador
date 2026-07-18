@@ -44,6 +44,7 @@ model Profile {
   designFontColor  String?
   designEffects    String? @db.Text
   designNotes      String? @db.Text
+  designImageStyles String? @db.Text
 
   // Behaviour
   autopost    Boolean  @default(false)

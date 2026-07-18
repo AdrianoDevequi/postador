@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { generateCaption, generateImagePrompt } from "@/lib/gemini";
+import { generateCaption, generateImagePrompt } from "@/lib/openai";
 import { generateImageUrl } from "@/lib/image";
 import { postToInstagram } from "@/lib/instagram";
 import { resolveInstagramImageUrl } from "@/lib/cdn";

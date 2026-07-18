@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { generateImagePrompt } from './src/lib/gemini';
+import { generateImagePrompt } from './src/lib/openai';
 import { generateImageUrl } from './src/lib/image';
 
 async function testFlow() {
