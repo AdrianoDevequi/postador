@@ -8,6 +8,38 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
 type BrandContext = Record<string, string>;
 
+/**
+ * Enforces a uniform safe margin on a 1024x1280 (4:5) image: the artwork is
+ * scaled down to (1 - 2*MARGIN) and centered over a darkened, blurred copy of
+ * itself. This guarantees breathing room at the edges even when the image model
+ * ignores the "keep a margin" instruction in the prompt.
+ */
+const SAFE_MARGIN = 0.06; // 6% on every side
+
+async function addSafeMargin(base: Buffer): Promise<Buffer> {
+    try {
+        const W = 1024;
+        const H = 1280;
+        const innerW = Math.round(W * (1 - 2 * SAFE_MARGIN));
+        const innerH = Math.round(H * (1 - 2 * SAFE_MARGIN));
+        const left = Math.round((W - innerW) / 2);
+        const top = Math.round((H - innerH) / 2);
+
+        const [foreground, background] = await Promise.all([
+            sharp(base).resize(innerW, innerH).toBuffer(),
+            sharp(base).resize(W, H).blur(28).modulate({ brightness: 0.8 }).toBuffer(),
+        ]);
+
+        return await sharp(background)
+            .composite([{ input: foreground, left, top }])
+            .jpeg({ quality: 90 })
+            .toBuffer();
+    } catch (e) {
+        console.error("[image] Falha ao aplicar margem segura:", e);
+        return base; // fall back to the original if anything goes wrong
+    }
+}
+
 async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Promise<string | null> {
     const styleHint = brand.brand_style ? `, style: ${brand.brand_style}` : "";
     const colorHint = brand.brand_colors ? `, colors: ${brand.brand_colors}` : "";
@@ -39,9 +71,13 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}): Pro
             // Crop to 4:5 (1024x1280) centered — ideal for Instagram feed
             const cropped = await sharp(Buffer.from(b64, "base64"))
                 .extract({ left: 0, top: 128, width: 1024, height: 1280 })
-                .jpeg({ quality: 85 })
+                .jpeg({ quality: 90 })
                 .toBuffer();
-            const imageBuffer = cropped;
+
+            // Guarantee a safe margin regardless of what the model drew: shrink the
+            // art and fill the border with a darkened, blurred copy of itself so the
+            // content never touches the edges nor risks being cropped in the feed.
+            const imageBuffer = await addSafeMargin(cropped);
 
             if (brand.brand_logo_url && brand.brand_use_logo === "true") {
                 try {
