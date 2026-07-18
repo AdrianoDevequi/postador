@@ -32,7 +32,7 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
         }, 2500);
 
         try {
-            const response = await fetch(`/api/cron?force=true&profileId=${profileId}`);
+            const response = await fetch(`/api/cron?force=true&draftOnly=true&profileId=${profileId}`);
             const data = await response.json();
 
             clearInterval(interval);

@@ -19,7 +19,7 @@ interface ProfileResult {
     error?: string;
 }
 
-async function processProfile(profile: Profile, baseUrl: string): Promise<ProfileResult> {
+async function processProfile(profile: Profile, baseUrl: string, draftOnly = false): Promise<ProfileResult> {
     const brand = profileToBrand(profile);
 
     // Pick a random topic for this profile
@@ -60,8 +60,8 @@ async function processProfile(profile: Profile, baseUrl: string): Promise<Profil
         return { profileId: profile.id, profileName: profile.name, postId: post.id, status: "ERROR", error: generationError };
     }
 
-    // Auto-publish if enabled for this profile
-    if (profile.autopost) {
+    // Auto-publish if enabled for this profile (never on manual "draft only" runs)
+    if (profile.autopost && !draftOnly) {
         try {
             const absoluteImageUrl = await resolveInstagramImageUrl(post.imageUrl, post.id, baseUrl);
             const igMediaId = await postToInstagram(absoluteImageUrl, post.caption, getIgCreds(profile));
@@ -89,6 +89,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const force = searchParams.get("force") === "true";
         const profileIdParam = searchParams.get("profileId");
+        const draftOnly = searchParams.get("draftOnly") === "true";
 
         // Authorization
         const authHeader = request.headers.get("authorization");
@@ -127,7 +128,7 @@ export async function GET(request: Request) {
 
         const results: ProfileResult[] = [];
         for (const profile of profiles) {
-            results.push(await processProfile(profile, baseUrl));
+            results.push(await processProfile(profile, baseUrl, draftOnly));
             // Mark scheduled slot as handled so the next poll won't repost it.
             if (!profileIdParam) {
                 await prisma.profile.update({
