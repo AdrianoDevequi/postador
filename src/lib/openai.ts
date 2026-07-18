@@ -141,7 +141,7 @@ The prompt must describe:
 - A relevant background photo or scene related to the caption topic
 - A semi-transparent colored overlay using the brand colors
 ${textRule}
-- All text and key elements must be inside a safe zone with at least 8% padding from all edges (Instagram crops edges on feed)
+- CRITICAL: keep ALL text and key elements inside a generous safe zone with at least 15% empty margin from every edge (top, bottom, left, right). Leave clear breathing room around the borders so nothing sits close to the edges or risks being cropped on the Instagram feed
 - Clean professional social media graphic design layout
 - ABSOLUTELY NO logos, NO brand marks, NO company names, NO icons with text, NO badges — the image must have ZERO branding elements
 - NO white space, fills entire canvas
@@ -149,7 +149,8 @@ ${textRule}
 Output ONLY the image generation prompt in English, under 400 characters.`;
 
     const text = await chat(prompt);
-    return `${text.trim()}${buildDesignBlock(brand)}`;
+    const safeMargin = " Keep all text and key elements within a safe zone with generous ~15% empty margin from every edge; nothing close to the borders.";
+    return `${text.trim()}${buildDesignBlock(brand)}${safeMargin}`;
   } catch (error) {
     console.error("Error generating image search term:", error);
     throw new Error("Failed to generate image search term");
