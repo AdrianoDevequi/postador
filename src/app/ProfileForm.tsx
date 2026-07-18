@@ -185,6 +185,91 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                 </div>
             </fieldset>
 
+            {/* Design da imagem */}
+            <fieldset className="border border-gray-200 rounded-lg p-4 space-y-4">
+                <legend className="text-sm font-semibold text-gray-700 px-2">Design da imagem</legend>
+                <p className="text-xs text-gray-500 -mt-1">
+                    Opcional. Guia a IA na hora de gerar o layout do post. Deixe vazio para a IA decidir.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Estilo da fonte</label>
+                        <input
+                            type="text"
+                            name="designFontStyle"
+                            list="fontStyleOptions"
+                            defaultValue={profile?.designFontStyle || ""}
+                            placeholder="Ex: sans-serif bold e condensada"
+                            className="w-full rounded-md border p-2 text-sm border-gray-300"
+                        />
+                        <datalist id="fontStyleOptions">
+                            <option value="Sans-serif bold e condensada" />
+                            <option value="Sans-serif moderna e clean" />
+                            <option value="Serifada elegante" />
+                            <option value="Display impactante" />
+                            <option value="Manuscrita / script" />
+                        </datalist>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tamanho da fonte</label>
+                        <select
+                            name="designFontSize"
+                            defaultValue={profile?.designFontSize || ""}
+                            className="w-full rounded-md border p-2 text-sm border-gray-300 bg-white"
+                        >
+                            <option value="">Padrão (IA decide)</option>
+                            <option value="pequena e discreta">Pequena</option>
+                            <option value="média e equilibrada">Média</option>
+                            <option value="grande e destacada">Grande</option>
+                            <option value="muito grande, ocupando bastante espaço">Muito grande</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Cor da fonte</label>
+                        <input
+                            type="text"
+                            name="designFontColor"
+                            defaultValue={profile?.designFontColor || ""}
+                            placeholder="Ex: branco, ou amarelo #FFD400"
+                            className="w-full rounded-md border p-2 text-sm border-gray-300"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Efeitos no texto</label>
+                        <input
+                            type="text"
+                            name="designEffects"
+                            list="effectsOptions"
+                            defaultValue={profile?.designEffects || ""}
+                            placeholder="Ex: sombra forte, contorno preto"
+                            className="w-full rounded-md border p-2 text-sm border-gray-300"
+                        />
+                        <datalist id="effectsOptions">
+                            <option value="sombra suave (drop shadow)" />
+                            <option value="contorno preto (outline)" />
+                            <option value="brilho / glow" />
+                            <option value="texto com gradiente" />
+                            <option value="fundo em faixa atrás do texto" />
+                        </datalist>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instruções extras de design</label>
+                    <textarea
+                        name="designNotes"
+                        defaultValue={profile?.designNotes || ""}
+                        rows={2}
+                        placeholder="Ex: título no topo, ícones minimalistas, muito contraste, estética premium…"
+                        className="w-full rounded-md border p-2 text-sm border-gray-300"
+                    />
+                </div>
+            </fieldset>
+
             {/* Comportamento */}
             <div className="flex flex-col gap-3 pt-1">
                 <label className="flex items-center gap-3 cursor-pointer">

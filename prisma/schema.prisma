@@ -38,6 +38,13 @@ model Profile {
   useLogo          Boolean @default(false)
   lessText         Boolean @default(false)
 
+  // Image design controls (typography, colors, effects for the generated graphic)
+  designFontStyle  String?
+  designFontSize   String?
+  designFontColor  String?
+  designEffects    String? @db.Text
+  designNotes      String? @db.Text
+
   // Behaviour
   autopost    Boolean  @default(false)
   active      Boolean  @default(true)

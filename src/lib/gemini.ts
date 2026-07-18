@@ -66,6 +66,23 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
   }
 }
 
+/**
+ * Turns the profile's design controls into an explicit typography/effects
+ * instruction that we append verbatim to the image prompt, so gpt-image-2
+ * honours the user's font/color/effect choices instead of the LLM dropping
+ * them when it compresses the prompt.
+ */
+function buildDesignBlock(brand: BrandContext): string {
+  const parts: string[] = [];
+  if (brand.design_font_style) parts.push(`headline font ${brand.design_font_style}`);
+  if (brand.design_font_size) parts.push(`headline size ${brand.design_font_size}`);
+  if (brand.design_font_color) parts.push(`text color ${brand.design_font_color}`);
+  if (brand.design_effects) parts.push(`text effects ${brand.design_effects}`);
+  let block = parts.length ? ` Typography: ${parts.join(", ")}.` : "";
+  if (brand.design_notes) block += ` Extra design direction: ${brand.design_notes}.`;
+  return block;
+}
+
 export async function generateImagePrompt(captionText: string, brand: BrandContext = {}): Promise<string> {
   try {
     const brandName = brand.brand_name || "the brand";
@@ -97,7 +114,7 @@ ${textRule}
 Output ONLY the image generation prompt in English, under 400 characters.`;
 
     const text = await chat(prompt);
-    return text.trim();
+    return `${text.trim()}${buildDesignBlock(brand)}`;
   } catch (error) {
     console.error("Error generating image search term:", error);
     throw new Error("Failed to generate image search term");

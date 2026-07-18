@@ -16,6 +16,11 @@ export function profileToBrand(p: Profile): Record<string, string> {
         brand_link: p.linkUrl ?? "",
         brand_use_logo: p.useLogo ? "true" : "false",
         brand_less_text: p.lessText ? "true" : "false",
+        design_font_style: p.designFontStyle ?? "",
+        design_font_size: p.designFontSize ?? "",
+        design_font_color: p.designFontColor ?? "",
+        design_effects: p.designEffects ?? "",
+        design_notes: p.designNotes ?? "",
     };
 }
 
