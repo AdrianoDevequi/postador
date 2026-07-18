@@ -111,8 +111,15 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
                             target="_blank"
                             className="block mb-4 rounded-lg overflow-hidden shadow-md mx-auto max-w-sm hover:opacity-90 transition-opacity"
                         >
+                            {/* Use the image already returned in the response (avoids a slow
+                                /api/image round-trip that can time out on cold starts). Falls
+                                back to the endpoint for relative/FTP paths. */}
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={`/api/image/${result.id}`} alt="Generated Post" className="w-full h-auto" />
+                            <img
+                                src={result.imageUrl && !result.imageUrl.startsWith("/") ? result.imageUrl : `/api/image/${result.id}`}
+                                alt="Post gerado"
+                                className="w-full h-auto"
+                            />
                         </a>
                     )}
 
