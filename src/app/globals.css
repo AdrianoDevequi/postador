@@ -26,7 +26,9 @@ html,
 body {
   background: var(--color-page);
   color: var(--color-ink);
-  font-family: var(--font-sans);
+  /* Reference the next/font variable directly: Tailwind v4 tree-shakes the
+     unused --font-sans theme token, which would leave this empty (→ Times). */
+  font-family: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Thin, quiet scrollbars to match the admin look */
