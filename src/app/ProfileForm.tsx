@@ -86,7 +86,10 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
     const palette = (profile?.brandPalette || "").split(",").map((s) => s.trim()).filter(Boolean);
 
     return (
-        <form action={action} className="space-y-6">
+        // key remounts the whole form when switching profiles, so uncontrolled
+        // inputs and client components (palette, schedule) reset to THIS profile's
+        // data instead of keeping the previously viewed profile's values.
+        <form key={isEdit ? profile.id : "new"} action={action} className="space-y-6">
             {isEdit && <input type="hidden" name="id" value={profile.id} />}
 
             <div>
