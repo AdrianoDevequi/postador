@@ -26,14 +26,24 @@ export default async function Home({
     ? null
     : profiles.find((p) => String(p.id) === profileParam) || profiles[0];
 
-  const [posts, publishedCount, draftCount, errorCount] = selected
-    ? await Promise.all([
-        prisma.post.findMany({ where: { profileId: selected.id }, orderBy: { createdAt: "desc" }, take: 10 }),
-        prisma.post.count({ where: { profileId: selected.id, status: "PUBLISHED" } }),
-        prisma.post.count({ where: { profileId: selected.id, status: "DRAFT" } }),
-        prisma.post.count({ where: { profileId: selected.id, status: "ERROR" } }),
-      ])
-    : [[], 0, 0, 0];
+  let posts: Awaited<ReturnType<typeof prisma.post.findMany>> = [];
+  let publishedCount = 0;
+  let draftCount = 0;
+  let errorCount = 0;
+  if (selected) {
+    // Two queries max (list + grouped counts) to stay within the DB's
+    // connection limit on the shared MySQL host.
+    const [postList, grouped] = await Promise.all([
+      prisma.post.findMany({ where: { profileId: selected.id }, orderBy: { createdAt: "desc" }, take: 10 }),
+      prisma.post.groupBy({ by: ["status"], where: { profileId: selected.id }, _count: true }),
+    ]);
+    posts = postList;
+    for (const g of grouped) {
+      if (g.status === "PUBLISHED") publishedCount = g._count;
+      else if (g.status === "DRAFT") draftCount = g._count;
+      else if (g.status === "ERROR") errorCount = g._count;
+    }
+  }
 
   const banners = (
     <>
