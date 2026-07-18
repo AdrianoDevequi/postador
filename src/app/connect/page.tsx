@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { confirmConnectedAccount } from "../actions";
 import { OAUTH_PENDING_COOKIE } from "@/lib/connect";
-import type { DiscoveredAccount } from "@/lib/facebook-oauth";
+import { listInstagramAccounts, type DiscoveredAccount } from "@/lib/facebook-oauth";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,14 @@ export default async function ConnectPage() {
 
     let pending: { profileId: number | null; accounts: DiscoveredAccount[] } | null = null;
     try {
-        pending = raw ? JSON.parse(raw) : null;
+        if (raw) {
+            const { profileId, userToken } = JSON.parse(raw) as {
+                profileId: number | null;
+                userToken: string;
+            };
+            const accounts = await listInstagramAccounts(userToken);
+            pending = { profileId, accounts };
+        }
     } catch {
         pending = null;
     }

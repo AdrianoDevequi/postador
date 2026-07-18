@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { discoverAccountsFromCode } from "@/lib/facebook-oauth";
+import { getUserTokenFromCode, listInstagramAccounts } from "@/lib/facebook-oauth";
 import {
     requireAdmin,
     callbackUri,
@@ -45,9 +45,11 @@ export async function GET(req: NextRequest) {
 
     const profileId = savedProfileId ? Number(savedProfileId) : null;
 
+    let userToken: string;
     let accounts;
     try {
-        accounts = await discoverAccountsFromCode(code, callbackUri(req.nextUrl.origin));
+        userToken = await getUserTokenFromCode(code, callbackUri(req.nextUrl.origin));
+        accounts = await listInstagramAccounts(userToken);
     } catch (e: any) {
         const detail = e.response?.data?.error?.message || e.message || "Erro desconhecido";
         return errorRedirect(req, `Falha ao conectar: ${detail}`);
@@ -69,12 +71,14 @@ export async function GET(req: NextRequest) {
         return res;
     }
 
-    // Multiple accounts → stash them and let the admin pick.
+    // Multiple accounts → keep only the (small) user token in the cookie and
+    // re-list the accounts on the picker page. Storing every Page token here
+    // overflows the browser's ~4 KB per-cookie limit and the cookie is dropped.
     const res = NextResponse.redirect(new URL("/connect", req.url));
     res.cookies.delete(OAUTH_STATE_COOKIE);
     res.cookies.set(
         OAUTH_PENDING_COOKIE,
-        JSON.stringify({ profileId, accounts }),
+        JSON.stringify({ profileId, userToken }),
         {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",

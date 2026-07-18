@@ -8,7 +8,7 @@ import { getIgCreds } from "@/lib/profile";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { deleteImageFromFtp } from "@/lib/ftp";
 import { persistConnectedAccount, OAUTH_PENDING_COOKIE } from "@/lib/connect";
-import type { DiscoveredAccount } from "@/lib/facebook-oauth";
+import { listInstagramAccounts } from "@/lib/facebook-oauth";
 import { cookies, headers } from "next/headers";
 
 async function checkAdminAuth() {
@@ -107,8 +107,9 @@ export async function confirmConnectedAccount(formData: FormData) {
     const raw = store.get(OAUTH_PENDING_COOKIE)?.value;
     if (!raw) throw new Error("Sessão de conexão expirada. Refaça o login com o Instagram.");
 
-    const pending = JSON.parse(raw) as { profileId: number | null; accounts: DiscoveredAccount[] };
-    const account = pending.accounts[index];
+    const pending = JSON.parse(raw) as { profileId: number | null; userToken: string };
+    const accounts = await listInstagramAccounts(pending.userToken);
+    const account = accounts[index];
     if (!account) throw new Error("Conta inválida.");
 
     const id = await persistConnectedAccount(pending.profileId ?? null, account);

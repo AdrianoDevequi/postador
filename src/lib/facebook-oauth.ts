@@ -73,7 +73,7 @@ async function getLongLivedUserToken(shortToken: string): Promise<string> {
  * (they don't expire while the user token is valid), so we store the Page
  * token as the profile's publishing token.
  */
-async function listInstagramAccounts(userToken: string): Promise<DiscoveredAccount[]> {
+export async function listInstagramAccounts(userToken: string): Promise<DiscoveredAccount[]> {
     interface PageNode {
         name?: string;
         access_token?: string;
@@ -108,13 +108,12 @@ async function listInstagramAccounts(userToken: string): Promise<DiscoveredAccou
 }
 
 /**
- * Full callback pipeline: code -> long-lived user token -> Instagram accounts.
+ * Exchanges the OAuth `code` for a long-lived (~60 day) user access token.
+ * We keep this token (small) in a cookie during the picker step and re-list
+ * the accounts from it, instead of stuffing every Page token into a cookie
+ * (which overflows the browser's ~4 KB per-cookie limit).
  */
-export async function discoverAccountsFromCode(
-    code: string,
-    redirectUri: string
-): Promise<DiscoveredAccount[]> {
+export async function getUserTokenFromCode(code: string, redirectUri: string): Promise<string> {
     const shortToken = await exchangeCodeForToken(code, redirectUri);
-    const longToken = await getLongLivedUserToken(shortToken);
-    return listInstagramAccounts(longToken);
+    return getLongLivedUserToken(shortToken);
 }
