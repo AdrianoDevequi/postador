@@ -90,7 +90,7 @@ export async function createProfile(formData: FormData) {
     });
 
     revalidatePath("/");
-    redirect(`/?profile=${profile.id}`);
+    redirect(`/?profile=${profile.id}&saved=1`);
 }
 
 export async function updateProfile(formData: FormData) {
@@ -116,7 +116,7 @@ export async function updateProfile(formData: FormData) {
     }
 
     revalidatePath("/");
-    redirect(`/?profile=${id}`);
+    redirect(`/?profile=${id}&saved=1`);
 }
 
 /**

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Profile } from "@prisma/client";
 import { getTokenStatus } from "@/lib/profile";
 import { logout } from "../login/actions";
+import { SaveToast } from "./SaveToast";
 
 function Logo() {
     return (
@@ -86,6 +87,7 @@ export function AppShell({
 }) {
     return (
         <div className="min-h-screen lg:flex">
+            <SaveToast />
             {/* Sidebar (desktop) */}
             <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white border-r border-line fixed inset-y-0 left-0 z-20">
                 <div className="h-16 flex items-center border-b border-line px-4">
