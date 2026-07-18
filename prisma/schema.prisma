@@ -46,6 +46,19 @@ model Profile {
   designNotes      String? @db.Text
   designImageStyles String? @db.Text
 
+  // Multiselect brand options (CSV). When alternateStyles is on, one is picked
+  // at random per post; otherwise all selected are applied together.
+  brandStyles     String? @db.Text
+  postTones       String? @db.Text
+  brandFormats    String? @db.Text
+  brandPalette    String? @db.Text
+  alternateStyles Boolean @default(true)
+
+  // Scheduling (per profile). Times are America/Sao_Paulo wall-clock.
+  scheduleDays       String?   // CSV of weekday numbers, 0=Sun … 6=Sat
+  scheduleTimes      String?   // CSV of "HH:MM"
+  lastScheduledRunAt DateTime?
+
   // Behaviour
   autopost    Boolean  @default(false)
   active      Boolean  @default(true)

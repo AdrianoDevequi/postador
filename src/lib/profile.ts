@@ -22,6 +22,11 @@ export function profileToBrand(p: Profile): Record<string, string> {
         design_effects: p.designEffects ?? "",
         design_notes: p.designNotes ?? "",
         design_image_styles: p.designImageStyles ?? "",
+        brand_styles: p.brandStyles ?? "",
+        brand_tones: p.postTones ?? "",
+        brand_formats: p.brandFormats ?? "",
+        brand_palette: p.brandPalette ?? "",
+        brand_alternate: p.alternateStyles ? "true" : "false",
     };
 }
 
@@ -74,4 +79,69 @@ export function getIgCreds(p: Pick<Profile, "igUserId" | "accessToken">): {
         igUserId: p.igUserId || process.env.INSTAGRAM_USER_ID || "",
         accessToken: p.accessToken || process.env.INSTAGRAM_ACCESS_TOKEN || "",
     };
+}
+
+// ---------------------------------------------------------------------------
+// Scheduling (America/Sao_Paulo, UTC-3, no DST)
+// ---------------------------------------------------------------------------
+
+const SP_TZ = "America/Sao_Paulo";
+export const WEEKDAY_LABELS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+type SchedulePick = Pick<Profile, "scheduleDays" | "scheduleTimes">;
+
+export function parseSchedule(p: SchedulePick): { days: number[]; times: string[] } {
+    const days = (p.scheduleDays || "")
+        .split(",")
+        .map((s) => Number(s.trim()))
+        .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+    const times = (p.scheduleTimes || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter((t) => /^\d{2}:\d{2}$/.test(t));
+    return { days, times };
+}
+
+/** Current São Paulo wall-clock date (YYYY-MM-DD) and weekday (0=Sun). */
+function nowInSaoPaulo(now: Date): { dateStr: string; weekday: number } {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: SP_TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "short",
+    }).formatToParts(now);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+    const map: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+    return { dateStr: `${get("year")}-${get("month")}-${get("day")}`, weekday: map[get("weekday")] ?? 0 };
+}
+
+/**
+ * True when a schedule slot has become due since lastScheduledRunAt — i.e. the
+ * cron (polled every ~15 min) should generate a post now for this profile.
+ */
+export function isScheduledDue(
+    p: Pick<Profile, "scheduleDays" | "scheduleTimes" | "lastScheduledRunAt">,
+    now: Date = new Date()
+): boolean {
+    const { days, times } = parseSchedule(p);
+    if (!days.length || !times.length) return false;
+
+    const { dateStr, weekday } = nowInSaoPaulo(now);
+    if (!days.includes(weekday)) return false;
+
+    const last = p.lastScheduledRunAt ? p.lastScheduledRunAt.getTime() : 0;
+    for (const t of times) {
+        const slotMs = new Date(`${dateStr}T${t}:00-03:00`).getTime();
+        if (slotMs <= now.getTime() && slotMs > last) return true;
+    }
+    return false;
+}
+
+/** Human summary of a schedule, e.g. "Seg, Qua, Sex às 09:00, 18:00". */
+export function describeSchedule(p: SchedulePick): string {
+    const { days, times } = parseSchedule(p);
+    if (!days.length || !times.length) return "Sem agendamento";
+    const dayStr = days.slice().sort((a, b) => a - b).map((d) => WEEKDAY_LABELS[d]).join(", ");
+    return `${dayStr} às ${times.join(", ")}`;
 }

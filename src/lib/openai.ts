@@ -22,12 +22,28 @@ async function chat(prompt: string): Promise<string> {
 
 type BrandContext = Record<string, string>;
 
+/**
+ * Resolves a multiselect CSV into a single string.
+ * - alternate on  → one option picked at random (varies the feed)
+ * - alternate off → all selected options combined (consistent look)
+ */
+function pickOrJoin(csv: string | undefined, alternate: boolean): string {
+  const items = (csv || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (!items.length) return "";
+  if (alternate) return items[Math.floor(Math.random() * items.length)];
+  return items.join(", ");
+}
+
+function isAlternate(brand: BrandContext): boolean {
+  return brand.brand_alternate !== "false"; // default: alternate
+}
+
 function buildBrandBlock(brand: BrandContext): string {
   const lines = [];
   if (brand.brand_name) lines.push(`- Nome da marca: ${brand.brand_name}`);
   if (brand.brand_description) lines.push(`- Descrição: ${brand.brand_description}`);
-  if (brand.brand_style) lines.push(`- Estilo: ${brand.brand_style}`);
-  if (brand.brand_colors) lines.push(`- Cores: ${brand.brand_colors}`);
+  const style = pickOrJoin(brand.brand_styles, isAlternate(brand)) || brand.brand_style;
+  if (style) lines.push(`- Estilo: ${style}`);
   if (brand.brand_extra) lines.push(`- Contexto extra: ${brand.brand_extra}`);
   return lines.length ? `\n\n    IDENTIDADE DA MARCA:\n    ${lines.join("\n    ")}` : "";
 }
@@ -42,7 +58,10 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
       "uma curiosidade de bastidores ou 'você sabia?'"
     ];
 
-    const randomType = postTypes[Math.floor(Math.random() * postTypes.length)];
+    // Tone/post type: use the profile's multiselect when set, else a random default.
+    const randomType =
+      pickOrJoin(brand.brand_tones, isAlternate(brand)) ||
+      postTypes[Math.floor(Math.random() * postTypes.length)];
     const brandBlock = buildBrandBlock(brand);
 
     const prompt = `Haja como um Social Media experiente. O tema central do perfil é "${topic}".
@@ -73,20 +92,20 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
  * them when it compresses the prompt.
  */
 function buildDesignBlock(brand: BrandContext): string {
+  const alternate = isAlternate(brand);
   let block = "";
 
-  // Art style: the profile can pick several — we choose one at random per post
-  // so the feed stays varied while sticking to the chosen looks.
-  if (brand.design_image_styles) {
-    const styles = brand.design_image_styles
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (styles.length) {
-      const chosen = styles[Math.floor(Math.random() * styles.length)];
-      block += ` Overall art style: ${chosen}.`;
-    }
-  }
+  // Multiselect looks — one at random per post (alternate on) or combined (off).
+  const artStyle = pickOrJoin(brand.design_image_styles, alternate);
+  if (artStyle) block += ` Overall art style: ${artStyle}.`;
+  const visualStyle = pickOrJoin(brand.brand_styles, alternate);
+  if (visualStyle) block += ` Visual style: ${visualStyle}.`;
+  const format = pickOrJoin(brand.brand_formats, alternate);
+  if (format) block += ` Composition: ${format}.`;
+
+  // Palette is always applied as a whole (it's a set of colors, not a choice).
+  const palette = (brand.brand_palette || "").split(",").map((s) => s.trim()).filter(Boolean);
+  if (palette.length) block += ` Color palette: ${palette.join(", ")}.`;
 
   const parts: string[] = [];
   if (brand.design_font_style) parts.push(`headline font ${brand.design_font_style}`);
@@ -101,8 +120,9 @@ function buildDesignBlock(brand: BrandContext): string {
 export async function generateImagePrompt(captionText: string, brand: BrandContext = {}): Promise<string> {
   try {
     const brandName = brand.brand_name || "the brand";
-    const colors = brand.brand_colors || "deep blue and white";
-    const style = brand.brand_style || "modern and professional";
+    const palette = (brand.brand_palette || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const colors = palette.length ? palette.join(", ") : brand.brand_colors || "deep blue and white";
+    const style = pickOrJoin(brand.brand_styles, isAlternate(brand)) || brand.brand_style || "modern and professional";
     const description = brand.brand_description || "";
 
     const lessText = brand.brand_less_text === "true";

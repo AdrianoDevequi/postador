@@ -5,7 +5,7 @@ import { generateCaption, generateImagePrompt } from "@/lib/openai";
 import { generateImageUrl } from "@/lib/image";
 import { postToInstagram } from "@/lib/instagram";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
-import { profileToBrand, getIgCreds } from "@/lib/profile";
+import { profileToBrand, getIgCreds, isScheduledDue } from "@/lib/profile";
 import type { Profile } from "@prisma/client";
 
 export const maxDuration = 300; // Allow time for several profiles / Envato scraping
@@ -107,19 +107,34 @@ export async function GET(request: Request) {
         const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
 
         // Which profiles to process?
-        // - profileId given (manual trigger) → that one profile
-        // - otherwise → all active profiles
-        const profiles = profileIdParam
-            ? await prisma.profile.findMany({ where: { id: Number(profileIdParam) } })
-            : await prisma.profile.findMany({ where: { active: true } });
+        // - profileId given (manual trigger)  → that one profile, right now
+        // - force=true (manual "run now all")  → every active profile, ignoring schedule
+        // - otherwise (scheduled poll)         → active profiles whose slot is due now
+        const now = new Date();
+        let profiles: Profile[];
+        if (profileIdParam) {
+            profiles = await prisma.profile.findMany({ where: { id: Number(profileIdParam) } });
+        } else {
+            const active = await prisma.profile.findMany({ where: { active: true } });
+            profiles = force ? active : active.filter((p) => isScheduledDue(p, now));
+        }
 
         if (profiles.length === 0) {
-            return NextResponse.json({ success: false, error: "Nenhum perfil ativo encontrado" }, { status: 404 });
+            // A poll with nothing due is a normal no-op, not an error.
+            const msg = profileIdParam ? "Perfil não encontrado" : "Nenhum post agendado para agora";
+            return NextResponse.json({ success: true, skipped: true, message: msg, results: [] });
         }
 
         const results: ProfileResult[] = [];
         for (const profile of profiles) {
             results.push(await processProfile(profile, baseUrl));
+            // Mark scheduled slot as handled so the next poll won't repost it.
+            if (!profileIdParam) {
+                await prisma.profile.update({
+                    where: { id: profile.id },
+                    data: { lastScheduledRunAt: now },
+                });
+            }
         }
 
         // For single-profile manual triggers, return the post directly (the dashboard expects this shape)

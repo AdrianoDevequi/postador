@@ -22,7 +22,7 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
         setLoading(true);
         setError("");
         setResult(null);
-        setStatus("Initializing...");
+        setStatus("Iniciando...");
 
         // Fake progress updates to keep user engaged
         let stepIndex = 0;
@@ -40,18 +40,18 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
             if (data.success || data.post) {
                 // If we got a post back even with an error, show it so user can see what happened
                 setResult(data.post);
-                setStatus("Complete!");
+                setStatus("Concluído!");
                 if (!data.success) {
-                    setError(data.error || "Generation finished with errors.");
+                    setError(data.error || "A geração terminou com erros.");
                 }
             } else {
-                setError(data.error || "Unknown error occurred");
-                setStatus("Failed");
+                setError(data.error || "Ocorreu um erro desconhecido");
+                setStatus("Falhou");
             }
         } catch (e: any) {
             clearInterval(interval);
-            setError(e.message || "Network error");
-            setStatus("Error");
+            setError(e.message || "Erro de rede");
+            setStatus("Erro");
         } finally {
             setLoading(false);
         }
@@ -64,34 +64,34 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
     };
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold mb-4">Manual Control</h2>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-line">
+            <h2 className="text-lg font-bold text-ink mb-4">Gerar post manualmente</h2>
 
             {!loading && !result && !error && (
                 <div>
-                    <p className="text-gray-600 mb-4">Trigger a new post generation immediately.</p>
+                    <p className="text-muted mb-4">Gere um novo post agora, sem esperar o agendamento.</p>
                     <button
                         onClick={handleTrigger}
                         className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                     >
-                        🚀 Generate New Draft
+                        🚀 Gerar novo post
                     </button>
                 </div>
             )}
 
             {loading && (
-                <div className="text-center py-8 bg-gray-50 rounded-lg animate-pulse">
-                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-lg font-medium text-indigo-800">{status}</p>
-                    <p className="text-sm text-gray-500 mt-2">This usually takes about 10-15 seconds.</p>
+                <div className="text-center py-8 bg-slate-50 rounded-lg animate-pulse">
+                    <div className="w-12 h-12 border-4 border-primary-light border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-lg font-medium text-primary">{status}</p>
+                    <p className="text-sm text-muted mt-2">Isso costuma levar de 10 a 15 segundos.</p>
                 </div>
             )}
 
             {error && !result && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
-                    <h3 className="text-red-800 font-bold">Error</h3>
-                    <p className="text-red-700">{error}</p>
-                    <button onClick={handleDone} className="mt-2 text-sm text-red-600 underline">Try Again</button>
+                <div className="bg-danger-light border-l-4 border-danger p-4 rounded-r">
+                    <h3 className="text-danger font-bold">Erro</h3>
+                    <p className="text-danger/90">{error}</p>
+                    <button onClick={handleDone} className="mt-2 text-sm text-danger underline">Tentar novamente</button>
                 </div>
             )}
 
@@ -101,7 +101,7 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
                         {result.status === 'ERROR' ? '⚠️' : '✅'}
                     </div>
                     <h3 className={`text-2xl font-bold mb-2 ${result.status === 'ERROR' ? 'text-red-800' : 'text-green-800'}`}>
-                        {result.status === 'ERROR' ? 'Draft Created with Errors' : 'Draft Created!'}
+                        {result.status === 'ERROR' ? 'Rascunho criado com erros' : 'Rascunho criado!'}
                     </h3>
                     {error && <p className="text-red-600 mb-4">{error}</p>}
 
@@ -123,7 +123,7 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
                         onClick={handleDone}
                         className={`${result.status === 'ERROR' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white px-6 py-2 rounded-full transition`}
                     >
-                        Done
+                        Concluir
                     </button>
                 </div>
             )}

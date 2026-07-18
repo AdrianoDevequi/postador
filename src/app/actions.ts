@@ -27,6 +27,12 @@ function parseProfileForm(formData: FormData) {
         return typeof v === "string" ? v.trim() : "";
     };
     const bool = (k: string) => formData.get(k) === "true";
+    const multi = (k: string, sep = ", ") =>
+        formData
+            .getAll(k)
+            .filter((v): v is string => typeof v === "string" && v.trim() !== "")
+            .map((v) => v.trim())
+            .join(sep) || null;
 
     return {
         name: str("name") || "Novo Perfil",
@@ -46,11 +52,14 @@ function parseProfileForm(formData: FormData) {
         designFontColor: str("designFontColor") || null,
         designEffects: str("designEffects") || null,
         designNotes: str("designNotes") || null,
-        designImageStyles:
-            formData
-                .getAll("designImageStyles")
-                .filter((v): v is string => typeof v === "string" && v.trim() !== "")
-                .join(", ") || null,
+        designImageStyles: multi("designImageStyles"),
+        brandStyles: multi("brandStyles"),
+        postTones: multi("postTones"),
+        brandFormats: multi("brandFormats"),
+        brandPalette: multi("brandPalette"),
+        alternateStyles: formData.get("alternateStyles") === "true",
+        scheduleDays: multi("scheduleDays", ","),
+        scheduleTimes: multi("scheduleTimes", ","),
         useLogo: bool("useLogo"),
         lessText: bool("lessText"),
         autopost: bool("autopost"),
@@ -75,7 +84,10 @@ export async function createProfile(formData: FormData) {
 
     const data = parseProfileForm(formData);
     const tokenExpiresAt = data.accessToken ? await resolveTokenExpiry(data.accessToken) : null;
-    const profile = await prisma.profile.create({ data: { ...data, tokenExpiresAt } });
+    // Initialize the schedule cursor to now so only future slots fire.
+    const profile = await prisma.profile.create({
+        data: { ...data, tokenExpiresAt, lastScheduledRunAt: new Date() },
+    });
 
     revalidatePath("/");
     redirect(`/?profile=${profile.id}`);
@@ -89,15 +101,18 @@ export async function updateProfile(formData: FormData) {
 
     const data = parseProfileForm(formData);
 
+    // Re-baseline the schedule cursor so edited times don't fire retroactively.
+    const lastScheduledRunAt = new Date();
+
     // Don't blow away a saved token if the field was left blank (it's masked in the UI)
     if (!data.accessToken) {
         const { accessToken, ...rest } = data;
         void accessToken;
-        await prisma.profile.update({ where: { id }, data: rest });
+        await prisma.profile.update({ where: { id }, data: { ...rest, lastScheduledRunAt } });
     } else {
         // New token provided → refresh its expiry from the Graph API
         const tokenExpiresAt = await resolveTokenExpiry(data.accessToken);
-        await prisma.profile.update({ where: { id }, data: { ...data, tokenExpiresAt } });
+        await prisma.profile.update({ where: { id }, data: { ...data, tokenExpiresAt, lastScheduledRunAt } });
     }
 
     revalidatePath("/");
