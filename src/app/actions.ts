@@ -10,11 +10,16 @@ import { deleteImageFromFtp } from "@/lib/ftp";
 import { persistConnectedAccount, OAUTH_PENDING_COOKIE } from "@/lib/connect";
 import { listInstagramAccounts } from "@/lib/facebook-oauth";
 import { cookies, headers } from "next/headers";
+import { requireUser, requireProfileOwner } from "@/lib/auth";
 
-async function checkAdminAuth() {
-    const cookieStore = await cookies();
-    const isAdmin = cookieStore.get("admin_session")?.value === process.env.ADMIN_PASSWORD;
-    if (!isAdmin) throw new Error("Unauthorized");
+/** Throws unless the post exists and belongs to the signed-in user's profile. */
+async function requirePostOwner(postId: number) {
+    const user = await requireUser();
+    const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { profile: { select: { userId: true } } },
+    });
+    if (!post || post.profile.userId !== user.id) throw new Error("Unauthorized");
 }
 
 // ---------------------------------------------------------------------------
@@ -80,13 +85,13 @@ async function resolveTokenExpiry(token: string): Promise<Date> {
 }
 
 export async function createProfile(formData: FormData) {
-    await checkAdminAuth();
+    const user = await requireUser();
 
     const data = parseProfileForm(formData);
     const tokenExpiresAt = data.accessToken ? await resolveTokenExpiry(data.accessToken) : null;
     // Initialize the schedule cursor to now so only future slots fire.
     const profile = await prisma.profile.create({
-        data: { ...data, tokenExpiresAt, lastScheduledRunAt: new Date() },
+        data: { ...data, userId: user.id, tokenExpiresAt, lastScheduledRunAt: new Date() },
     });
 
     revalidatePath("/");
@@ -94,10 +99,9 @@ export async function createProfile(formData: FormData) {
 }
 
 export async function updateProfile(formData: FormData) {
-    await checkAdminAuth();
-
     const id = Number(formData.get("id"));
     if (!id) throw new Error("Missing profile id");
+    await requireProfileOwner(id);
 
     const data = parseProfileForm(formData);
 
@@ -125,7 +129,7 @@ export async function updateProfile(formData: FormData) {
  * callback, so tokens never round-trip through the page HTML.
  */
 export async function confirmConnectedAccount(formData: FormData) {
-    await checkAdminAuth();
+    const user = await requireUser();
 
     const index = Number(formData.get("index"));
     const store = await cookies();
@@ -137,7 +141,8 @@ export async function confirmConnectedAccount(formData: FormData) {
     const account = accounts[index];
     if (!account) throw new Error("Conta inválida.");
 
-    const id = await persistConnectedAccount(pending.profileId ?? null, account);
+    if (pending.profileId) await requireProfileOwner(pending.profileId);
+    const id = await persistConnectedAccount(pending.profileId ?? null, account, user.id);
 
     store.delete(OAUTH_PENDING_COOKIE);
     revalidatePath("/");
@@ -145,13 +150,13 @@ export async function confirmConnectedAccount(formData: FormData) {
 }
 
 export async function toggleProfileActive(id: number, active: boolean) {
-    await checkAdminAuth();
+    await requireProfileOwner(id);
     await prisma.profile.update({ where: { id }, data: { active } });
     revalidatePath("/");
 }
 
 export async function deleteProfile(id: number) {
-    await checkAdminAuth();
+    await requireProfileOwner(id);
 
     // Clean up any FTP-hosted images for this profile's posts
     const posts = await prisma.post.findMany({ where: { profileId: id }, select: { imageUrl: true } });
@@ -167,7 +172,7 @@ export async function deleteProfile(id: number) {
 // ---------------------------------------------------------------------------
 
 export async function approvePost(id: number) {
-    await checkAdminAuth();
+    await requirePostOwner(id);
 
     const post = await prisma.post.findUnique({ where: { id }, include: { profile: true } });
     if (!post || post.published) return { error: "Post not found or already published" };
@@ -200,7 +205,7 @@ export async function approvePost(id: number) {
 }
 
 export async function resetPostToDraft(id: number) {
-    await checkAdminAuth();
+    await requirePostOwner(id);
 
     await prisma.post.update({
         where: { id },
@@ -211,7 +216,7 @@ export async function resetPostToDraft(id: number) {
 }
 
 export async function deletePost(id: number) {
-    await checkAdminAuth();
+    await requirePostOwner(id);
 
     const post = await prisma.post.findUnique({ where: { id }, select: { imageUrl: true } });
     if (post?.imageUrl) await deleteImageFromFtp(post.imageUrl);
@@ -221,7 +226,7 @@ export async function deletePost(id: number) {
 }
 
 export async function cleanErrorPosts(profileId: number) {
-    await checkAdminAuth();
+    await requireProfileOwner(profileId);
 
     const where = { status: "ERROR", profileId };
     const posts = await prisma.post.findMany({ where, select: { id: true, imageUrl: true } });
@@ -233,7 +238,7 @@ export async function cleanErrorPosts(profileId: number) {
 }
 
 export async function cleanOldPosts(profileId: number) {
-    await checkAdminAuth();
+    await requireProfileOwner(profileId);
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 15);

@@ -68,7 +68,14 @@
       "Bash(node check2.mjs)",
       "Bash(node check3.mjs)",
       "Bash(git restore *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code} | type=%{content_type} | size=%{size_download} bytes | time=%{time_total}s\\\\n\" http://localhost:3000/api/image/226)",
+      "Bash(python -)",
+      "Bash(echo \"tsc exit=$?\")",
+      "Bash(echo \"exit=$?\")",
+      "Bash(grep -o \"DATABASE_URL=.\\\\{0,25\\\\}\" .env)",
+      "Bash(echo \"tsc=$?\")",
+      "Bash(echo \"eslint=$?\")"
     ]
   }
 }

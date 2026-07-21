@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
 import { cleanOldPosts, cleanErrorPosts } from "./actions";
 import { CleanPostsButton } from "./CleanPostsButton";
 import { ManualTrigger } from "./ManualTrigger";
@@ -20,7 +22,13 @@ export default async function Home({
 }) {
   const { profile: profileParam, connected, connect_error: connectError } = await searchParams;
 
-  const profiles = await prisma.profile.findMany({ orderBy: { id: "asc" } });
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const profiles = await prisma.profile.findMany({
+    where: { userId: user.id },
+    orderBy: { id: "asc" },
+  });
 
   const isNew = profileParam === "new" || profiles.length === 0;
   const selected = isNew
@@ -66,7 +74,13 @@ export default async function Home({
   // New profile screen
   if (isNew || !selected) {
     return (
-      <AppShell profiles={profiles} isNew title="Novo perfil" subtitle="Conecte uma conta e defina a marca">
+      <AppShell
+        profiles={profiles}
+        isNew
+        userLabel={user.email}
+        title="Novo perfil"
+        subtitle="Conecte uma conta e defina a marca"
+      >
         <div className="space-y-6">
           {banners}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-line">
@@ -83,6 +97,7 @@ export default async function Home({
     <AppShell
       profiles={profiles}
       selectedId={selected.id}
+      userLabel={user.email}
       title={selected.name}
       subtitle={describeSchedule(selected)}
       actions={<DeleteProfileButton profileId={selected.id} profileName={selected.name} />}

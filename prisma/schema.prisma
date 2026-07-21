@@ -14,9 +14,24 @@ model Config {
   updatedAt DateTime @updatedAt
 }
 
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+
+  profiles     Profile[]
+}
+
 model Profile {
   id          Int     @id @default(autoincrement())
   name        String
+
+  // Owner. Nullable for profiles created before accounts existed — the first
+  // user to sign up claims them (see signup action).
+  userId      Int?
+  user        User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Instagram credentials (fallback to env vars when empty — for the legacy default profile)
   igUserId       String    @default("")
@@ -65,6 +80,8 @@ model Profile {
 
   posts       Post[]
   createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Post {

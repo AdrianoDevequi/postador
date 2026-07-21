@@ -1,28 +1,29 @@
 'use server'
 
-import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import { endSession, startSession, verifyPassword } from '@/lib/auth'
 
 export async function login(formData: FormData) {
-    const password = formData.get('password')
-    const correctPassword = process.env.ADMIN_PASSWORD
+    const email = String(formData.get('email') || '').trim().toLowerCase()
+    const password = String(formData.get('password') || '')
 
-    if (password === correctPassword) {
-        // Set cookie valid for 7 days
-        const cookieStore = await cookies();
-        cookieStore.set('admin_session', password.toString(), {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-            path: '/',
-        })
+    // Same message for unknown email and wrong password, so the response
+    // doesn't reveal which accounts exist.
+    const invalid =
+        `/login?error=${encodeURIComponent('Email ou senha inválidos.')}` +
+        `&email=${encodeURIComponent(email)}`
 
-        redirect('/')
-    }
+    if (!email || !password) redirect(invalid)
+
+    const user = email ? await prisma.user.findUnique({ where: { email } }) : null
+    if (!user || !(await verifyPassword(password, user.passwordHash))) redirect(invalid)
+
+    await startSession(user.id)
+    redirect('/')
 }
 
 export async function logout() {
-    const cookieStore = await cookies();
-    cookieStore.delete('admin_session');
-    redirect('/login');
+    await endSession()
+    redirect('/login')
 }

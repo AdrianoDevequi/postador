@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { SESSION_COOKIE, verifySessionToken } from '@/lib/session'
 
-export function middleware(request: NextRequest) {
-    const adminSession = request.cookies.get('admin_session')?.value
-    const correctPassword = process.env.ADMIN_PASSWORD
-
-    // 1. Allow Login Page and Public Static Assets
+export async function middleware(request: NextRequest) {
+    // 1. Allow auth pages and public static assets
     if (
         request.nextUrl.pathname.startsWith('/login') ||
+        request.nextUrl.pathname.startsWith('/signup') ||
         request.nextUrl.pathname.startsWith('/_next') ||
         request.nextUrl.pathname.includes('.') // public files like favicon.ico
     ) {
@@ -15,15 +14,15 @@ export function middleware(request: NextRequest) {
     }
 
     // 2. Allow API Routes (They have their own secret check, OR we check cookie)
-    // We generally let API routes pass middleware and handle their own auth 
+    // We generally let API routes pass middleware and handle their own auth
     // because Cron Jobs don't have cookies.
     if (request.nextUrl.pathname.startsWith('/api')) {
         return NextResponse.next()
     }
 
     // 3. Protect everything else (The Dashboard /)
-    // Secure logic: If no password set on server, or cookie doesn't match, Redirect.
-    if (!correctPassword || adminSession !== correctPassword) {
+    const userId = await verifySessionToken(request.cookies.get(SESSION_COOKIE)?.value)
+    if (!userId) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 

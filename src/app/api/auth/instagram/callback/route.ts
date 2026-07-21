@@ -22,8 +22,9 @@ function errorRedirect(req: NextRequest, msg: string) {
  * to the picker page when the admin manages several Instagram accounts.
  */
 export async function GET(req: NextRequest) {
+    let userId: number;
     try {
-        await requireAdmin();
+        userId = await requireAdmin();
     } catch {
         return NextResponse.redirect(new URL("/login", req.url));
     }
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
 
     // Single account → save straight away, no picker needed.
     if (accounts.length === 1) {
-        const id = await persistConnectedAccount(profileId, accounts[0]);
+        const id = await persistConnectedAccount(profileId, accounts[0], userId);
         const url = new URL(`/?profile=${id}&connected=1`, req.url);
         const res = NextResponse.redirect(url);
         res.cookies.delete(OAUTH_STATE_COOKIE);

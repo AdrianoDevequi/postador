@@ -7,6 +7,7 @@ import { postToInstagram } from "@/lib/instagram";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { profileToBrand, getIgCreds, isScheduledDue } from "@/lib/profile";
 import type { Profile } from "@prisma/client";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 export const maxDuration = 300; // Allow time for several profiles / Envato scraping
 
@@ -95,9 +96,10 @@ export async function GET(request: Request) {
         const authHeader = request.headers.get("authorization");
         const isVercelCron = request.headers.get("x-vercel-cron") === "1";
         const cookieStore = await cookies();
-        const isAdmin = cookieStore.get("admin_session")?.value === process.env.ADMIN_PASSWORD;
+        const userId = await verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
 
-        if (!isAdmin && authHeader !== `Bearer ${process.env.CRON_SECRET}` && !force && !isVercelCron) {
+        const isCron = authHeader === `Bearer ${process.env.CRON_SECRET}` || isVercelCron;
+        if (!userId && !isCron) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
@@ -114,9 +116,14 @@ export async function GET(request: Request) {
         const now = new Date();
         let profiles: Profile[];
         if (profileIdParam) {
-            profiles = await prisma.profile.findMany({ where: { id: Number(profileIdParam) } });
+            // A logged-in user may only trigger their own profiles.
+            profiles = await prisma.profile.findMany({
+                where: { id: Number(profileIdParam), ...(userId ? { userId } : {}) },
+            });
         } else {
-            const active = await prisma.profile.findMany({ where: { active: true } });
+            const active = await prisma.profile.findMany({
+                where: { active: true, ...(userId && !isCron ? { userId } : {}) },
+            });
             profiles = force ? active : active.filter((p) => isScheduledDue(p, now));
         }
 

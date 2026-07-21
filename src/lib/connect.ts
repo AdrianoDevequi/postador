@@ -2,16 +2,17 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { fetchTokenExpiry } from "@/lib/instagram";
 import type { DiscoveredAccount } from "@/lib/facebook-oauth";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 export const OAUTH_STATE_COOKIE = "ig_oauth_state";
 export const OAUTH_PENDING_COOKIE = "ig_connect_pending";
 
-/** Throws unless the current request carries a valid admin session cookie. */
-export async function requireAdmin(): Promise<void> {
+/** Returns the signed-in user id, or throws. */
+export async function requireAdmin(): Promise<number> {
     const store = await cookies();
-    if (store.get("admin_session")?.value !== process.env.ADMIN_PASSWORD) {
-        throw new Error("Unauthorized");
-    }
+    const userId = await verifySessionToken(store.get(SESSION_COOKIE)?.value);
+    if (!userId) throw new Error("Unauthorized");
+    return userId;
 }
 
 /**
@@ -30,7 +31,8 @@ export function callbackUri(origin: string): string {
  */
 export async function persistConnectedAccount(
     profileId: number | null,
-    account: DiscoveredAccount
+    account: DiscoveredAccount,
+    userId: number
 ): Promise<number> {
     // Page tokens from a long-lived user token don't expire; debug_token returns
     // expires_at = 0 -> null, which we store as "unknown/never" expiry.
@@ -44,12 +46,14 @@ export async function persistConnectedAccount(
     };
 
     if (profileId) {
-        await prisma.profile.update({ where: { id: profileId }, data });
+        // Scoped by userId so a profile can only be rewired by its owner.
+        const { count } = await prisma.profile.updateMany({ where: { id: profileId, userId }, data });
+        if (count === 0) throw new Error("Unauthorized");
         return profileId;
     }
 
     const created = await prisma.profile.create({
-        data: { ...data, name: account.igUsername || account.pageName || "Novo Perfil" },
+        data: { ...data, userId, name: account.igUsername || account.pageName || "Novo Perfil" },
     });
     return created.id;
 }
