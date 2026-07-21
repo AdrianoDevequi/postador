@@ -28,7 +28,7 @@ internacionais e submissões em português costumam voltar pedindo tradução.
 | Exclusão de dados | ✅ cadastrada — `https://postador.vercel.app/exclusao-de-dados` |
 | Categoria | ✅ Negócio e Páginas |
 | Fluxo funcionando ponta a ponta | ✅ conectado e publicando pelo app novo |
-| Ícone do app | ❌ pendente — arrastar `public/app-icon.png` (1024×1024) |
+| Ícone do app | ✅ `public/app-icon.png` (1024×1024) |
 | Verificação de negócio (Master Sites) | ⏳ **em análise** (~2 dias úteis) — enviada em 21/07/2026 |
 | Screencast | ❌ pendente — exige gravar o fluxo funcionando |
 
@@ -51,11 +51,9 @@ O painel encadeia as etapas — cada uma só abre quando a anterior conclui:
 
 ## O que depende de você
 
-1. **Ícone.** Arrastar `public/app-icon.png` no campo App icon — a Meta só
-   cria o input de arquivo ao clicar, o que abre o seletor nativo do sistema.
-2. **Screencast.** Vídeo mostrando o fluxo real de ponta a ponta, sem cortes.
+1. **Screencast.** Vídeo mostrando o fluxo real de ponta a ponta, sem cortes.
    Roteiro abaixo. O fluxo já funciona, então dá para gravar a qualquer momento.
-3. **Envio.** O clique final é seu — é uma declaração formal em nome da empresa.
+2. **Envio.** O clique final é seu — é uma declaração formal em nome da empresa.
 
 ## Roteiro do screencast
 
