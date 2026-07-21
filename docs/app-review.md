@@ -29,7 +29,7 @@ internacionais e submissões em português costumam voltar pedindo tradução.
 | Categoria | ✅ Negócio e Páginas |
 | Fluxo funcionando ponta a ponta | ✅ conectado e publicando pelo app novo |
 | Ícone do app | ❌ pendente — arrastar `public/app-icon.png` (1024×1024) |
-| Verificação de negócio (Master Sites) | ❌ pendente — exige documentos da empresa |
+| Verificação de negócio (Master Sites) | ⏳ **em análise** (~2 dias úteis) — enviada em 21/07/2026 |
 | Screencast | ❌ pendente — exige gravar o fluxo funcionando |
 
 Dados da empresa já cadastrados no portfólio Master Sites: razão social
@@ -37,14 +37,24 @@ Dados da empresa já cadastrados no portfólio Master Sites: razão social
 endereço em Londrina/PR e site `https://mastersites.com.br`. Falta só o
 complemento do endereço, que é campo opcional.
 
-## Bloqueios que dependem de você
+## Ordem das etapas
 
-1. **Verificação de negócio / Provedor de Tecnologia.** O painel avisa: "Você
-   precisará concluir a verificação de acesso". Exige documentos legais da
-   empresa (CNPJ, comprovante de endereço, site com o mesmo domínio).
-2. **Screencast.** Vídeo mostrando o fluxo real de ponta a ponta. Roteiro
-   sugerido abaixo. Só é possível gravar depois que a sua conta do Instagram
-   estiver como Testador e tiver aceitado o convite.
+O painel encadeia as etapas — cada uma só abre quando a anterior conclui:
+
+1. **Verificação da empresa** — enviada 21/07/2026, em análise. Não exigiu
+   upload: a Meta localizou o registro pelo CNPJ.
+2. **Verificação do acesso** (Provedor de Tecnologia) — bloqueada até a etapa 1
+   passar. Prazo declarado de ~5 dias. Ainda não está claro se é obrigatória
+   para as nossas permissões ou só para acesso a dados de outras empresas.
+3. **App Review das permissões** — pede o screencast.
+4. **App Ao vivo.**
+
+## O que depende de você
+
+1. **Ícone.** Arrastar `public/app-icon.png` no campo App icon — a Meta só
+   cria o input de arquivo ao clicar, o que abre o seletor nativo do sistema.
+2. **Screencast.** Vídeo mostrando o fluxo real de ponta a ponta, sem cortes.
+   Roteiro abaixo. O fluxo já funciona, então dá para gravar a qualquer momento.
 3. **Envio.** O clique final é seu — é uma declaração formal em nome da empresa.
 
 ## Roteiro do screencast
