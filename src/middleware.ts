@@ -7,6 +7,10 @@ export async function middleware(request: NextRequest) {
     if (
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup') ||
+        // Meta's reviewers (and their crawler) must reach these without a session.
+        request.nextUrl.pathname.startsWith('/privacidade') ||
+        request.nextUrl.pathname.startsWith('/termos') ||
+        request.nextUrl.pathname.startsWith('/exclusao-de-dados') ||
         request.nextUrl.pathname.startsWith('/_next') ||
         request.nextUrl.pathname.includes('.') // public files like favicon.ico
     ) {

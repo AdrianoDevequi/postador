@@ -9,6 +9,8 @@ import { ProfileForm } from "./ProfileForm";
 import { DeleteProfileButton } from "./ProfileControls";
 import { TokenStatusBadge } from "./TokenStatusBadge";
 import { getTokenStatus, describeSchedule, nextScheduledRun } from "@/lib/profile";
+import { getAccessState } from "@/lib/access";
+import { AccessRequestCard } from "./AccessRequestCard";
 import { AppShell } from "./ui/AppShell";
 import { StatCard } from "./ui/StatCard";
 import { NextPostCountdown } from "./ui/NextPostCountdown";
@@ -29,6 +31,8 @@ export default async function Home({
     where: { userId: user.id },
     orderBy: { id: "asc" },
   });
+
+  const access = await getAccessState(user);
 
   const isNew = profileParam === "new" || profiles.length === 0;
   const selected = isNew
@@ -56,6 +60,7 @@ export default async function Home({
 
   const banners = (
     <>
+      {!access.allowed && <AccessRequestCard request={access.request} />}
       {connected && (
         <div className="rounded-xl p-4 bg-success-light border-l-4 border-success">
           <p className="font-bold text-[#0a7a3f]">✅ Instagram conectado com sucesso</p>
@@ -78,13 +83,14 @@ export default async function Home({
         profiles={profiles}
         isNew
         userLabel={user.email}
+        isAdmin={user.isAdmin}
         title="Novo perfil"
         subtitle="Conecte uma conta e defina a marca"
       >
         <div className="space-y-6">
           {banners}
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-line">
-            <ProfileForm />
+            <ProfileForm canConnect={access.allowed} />
           </div>
         </div>
       </AppShell>
@@ -98,6 +104,7 @@ export default async function Home({
       profiles={profiles}
       selectedId={selected.id}
       userLabel={user.email}
+      isAdmin={user.isAdmin}
       title={selected.name}
       subtitle={describeSchedule(selected)}
       actions={<DeleteProfileButton profileId={selected.id} profileName={selected.name} />}
@@ -195,7 +202,7 @@ export default async function Home({
             <h2 className="text-lg font-bold text-ink">Configurações</h2>
             <TokenStatusBadge status={ts} expiresAt={selected.tokenExpiresAt} />
           </div>
-          <ProfileForm profile={selected} />
+          <ProfileForm profile={selected} canConnect={access.allowed} />
         </div>
       </div>
     </AppShell>

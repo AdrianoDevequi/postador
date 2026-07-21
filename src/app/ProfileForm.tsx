@@ -79,7 +79,7 @@ function HelpTip({ children }: { children: React.ReactNode }) {
     );
 }
 
-export function ProfileForm({ profile }: { profile?: Profile }) {
+export function ProfileForm({ profile, canConnect = true }: { profile?: Profile; canConnect?: boolean }) {
     const isEdit = !!profile;
     const action = isEdit ? updateProfile : createProfile;
     const schedule = parseSchedule(profile ?? { scheduleDays: "", scheduleTimes: "" });
@@ -102,6 +102,15 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
 
             {/* Instagram */}
             <Section title="Conexão com o Instagram" description="Entre com sua conta e o ID e o token são preenchidos automaticamente.">
+                {/* Hidden rather than disabled while access is pending: clicking it
+                    would just bounce off Instagram with "Função de desenvolvedor é
+                    insuficiente", which reads like a bug in our app. */}
+                {!canConnect ? (
+                    <p className="text-sm text-muted bg-slate-50 border border-line rounded-lg p-3">
+                        A conexão com o Instagram é liberada assim que sua solicitação for aprovada — veja o aviso no
+                        topo da página.
+                    </p>
+                ) : (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 bg-primary-light border border-primary/20 rounded-lg p-3">
                     <a
                         href={isEdit ? `/api/auth/instagram-login?profileId=${profile.id}` : "/api/auth/instagram-login"}
@@ -117,6 +126,7 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                         Comercial ou Criador de conteúdo.
                     </p>
                 </div>
+                )}
 
                 {isEdit && profile?.igUserId && (
                     <p className="text-sm text-success font-medium">
@@ -124,16 +134,21 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                     </p>
                 )}
 
-                <p className="text-xs text-muted -mt-1">
-                    Sua conta é vinculada a uma Página do Facebook?{" "}
-                    <a
-                        href={isEdit ? `/api/auth/instagram?profileId=${profile.id}` : "/api/auth/instagram"}
-                        className="text-primary underline"
-                    >
-                        Conectar via Facebook
-                    </a>{" "}
-                    (fluxo antigo).
-                </p>
+                {/* Same dev-mode restriction applies to the Facebook path, so it's
+                    gated too — offering it while blocked only leads to a second
+                    dead end. */}
+                {canConnect && (
+                    <p className="text-xs text-muted -mt-1">
+                        Sua conta é vinculada a uma Página do Facebook?{" "}
+                        <a
+                            href={isEdit ? `/api/auth/instagram?profileId=${profile.id}` : "/api/auth/instagram"}
+                            className="text-primary underline"
+                        >
+                            Conectar via Facebook
+                        </a>{" "}
+                        (fluxo antigo).
+                    </p>
+                )}
 
                 {/* Escape hatch for when OAuth fails or a token has to be pasted by
                     hand. Collapsed by default — connecting via the button above

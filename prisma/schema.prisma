@@ -21,7 +21,30 @@ model User {
   name         String?
   createdAt    DateTime @default(now())
 
-  profiles     Profile[]
+  // Sees /admin and connects Instagram without going through the access queue.
+  isAdmin      Boolean  @default(false)
+
+  profiles       Profile[]
+  accessRequests AccessRequest[]
+}
+
+// While the Meta app is unpublished, only Instagram accounts listed as testers
+// in the app dashboard can authorize it. Users submit their handle here, the
+// admin adds it as a tester on Meta and approves the row, which unlocks the
+// "Conectar com Instagram" button for that user.
+// Goes away once the app clears App Review (set IG_ACCESS_GATE=off).
+model AccessRequest {
+  id         Int       @id @default(autoincrement())
+  igHandle   String
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt  DateTime  @default(now())
+  reviewedAt DateTime?
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, igHandle])
+  @@index([status])
 }
 
 model Profile {
