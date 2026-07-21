@@ -142,7 +142,7 @@ The prompt must describe:
 - A semi-transparent colored overlay using the brand colors
 ${textRule}
 - The background image/scene must fill the entire canvas edge-to-edge (full bleed, no borders or frames)
-- BUT keep ALL TEXT and key graphic elements (titles, subtitles, bullets, icons) within a safe zone, ~12% away from every edge. The top and bottom edges get cropped on the Instagram feed, so NEVER place text near the top or bottom edge — leave clear empty space there
+- BUT keep ALL TEXT and key graphic elements (${lessText ? "the headline and icons" : "titles, subtitles, bullets, icons"}) within a safe zone, ~12% away from every edge. The top and bottom edges get cropped on the Instagram feed, so NEVER place text near the top or bottom edge — leave clear empty space there
 - Clean professional social media graphic design layout
 - ABSOLUTELY NO logos, NO brand marks, NO company names, NO icons with text, NO badges — the image must have ZERO branding elements
 - NO white space, fills entire canvas
@@ -151,7 +151,13 @@ Output ONLY the image generation prompt in English, under 400 characters.`;
 
     const text = await chat(prompt);
     const safeMargin = " Background fills the whole canvas edge-to-edge; keep ALL text and key elements ~12% away from every edge, and never near the top or bottom (those edges get cropped on the feed).";
-    return `${text.trim()}${buildDesignBlock(brand)}${safeMargin}`;
+    // Appended verbatim (like the design block) — the LLM above often drops this
+    // rule when it compresses the prompt, and then gpt-image-2 fills the art with
+    // bullets anyway.
+    const lessTextRule = lessText
+      ? " STRICT TEXT LIMIT: the image must contain ONE short headline and NOTHING else — absolutely NO bullet points, NO bullet lists, NO subtitle, NO paragraphs, NO captions, NO labelled icon rows. Any text beyond the single headline is wrong."
+      : "";
+    return `${text.trim()}${buildDesignBlock(brand)}${safeMargin}${lessTextRule}`;
   } catch (error) {
     console.error("Error generating image search term:", error);
     throw new Error("Failed to generate image search term");
