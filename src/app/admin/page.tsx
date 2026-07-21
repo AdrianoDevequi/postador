@@ -59,7 +59,7 @@ export default async function AdminPage() {
 
                 <div className="bg-white rounded-2xl shadow-sm border border-line overflow-hidden">
                     <a
-                        href="https://developers.facebook.com/apps/813460095069513/roles/roles/"
+                        href="https://developers.facebook.com/apps/1542945893942187/roles/roles/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block px-5 py-3 text-xs font-semibold text-primary border-b border-line hover:bg-primary-light transition-colors"

@@ -1,7 +1,15 @@
-# App Review — Postador (Instagram API with Instagram Login)
+# App Review — Postador Master (Instagram API with Instagram Login)
 
-Material para submeter o app **Postador** (`813460095069513`, app do Instagram
-`887837497336635`) à análise da Meta e sair do modo de desenvolvimento.
+Material para submeter o app **Postador Master** (`1542945893942187`, app do
+Instagram `1350355007287029`) à análise da Meta e sair do modo de desenvolvimento.
+
+O app é do portfólio **Master Sites** (`2296381251167956`), que é quem precisa
+passar pela verificação de negócio — a análise do app olha o portfólio dono.
+
+> O app antigo **Postador** (`813460095069513`, IG `887837497336635`), do
+> portfólio "Criação de sites jupiter", ficou de lado. Não foi movido nem
+> excluído: a Meta não oferece transferência de app entre portfólios, só
+> remover e readicionar, e não valia o risco de deixá-lo órfão.
 
 Os textos de justificativa estão em inglês de propósito: os analistas da Meta são
 internacionais e submissões em português costumam voltar pedindo tradução.
@@ -13,14 +21,21 @@ internacionais e submissões em português costumam voltar pedindo tradução.
 | Item | Situação |
 |---|---|
 | Redirect URI do Instagram Login | ✅ `https://postador.vercel.app/api/auth/instagram-login/callback` |
-| Permissões adicionadas ao caso de uso | ✅ `instagram_business_basic`, `instagram_business_content_publish` |
-| Nível de acesso | ⚠️ Standard ("Pronto para teste") — o review pede Advanced |
-| Política de Privacidade | ✅ `https://postador.vercel.app/privacidade` — falta cadastrar no painel |
-| Termos de Uso | ✅ `https://postador.vercel.app/termos` |
-| Exclusão de dados | ✅ `https://postador.vercel.app/exclusao-de-dados` |
-| Ícone e categoria do app | ❓ conferir em Configurações do app → Básico |
-| Verificação de negócio | ❌ pendente — exige documentos da empresa |
+| Permissões | ✅ `instagram_business_basic`, `instagram_business_content_publish` |
+| Nível de acesso | ⚠️ Standard — o review pede Advanced |
+| Política de Privacidade | ✅ cadastrada — `https://postador.vercel.app/privacidade` |
+| Termos de Uso | ✅ cadastrada — `https://postador.vercel.app/termos` |
+| Exclusão de dados | ✅ cadastrada — `https://postador.vercel.app/exclusao-de-dados` |
+| Categoria | ✅ Negócio e Páginas |
+| Fluxo funcionando ponta a ponta | ✅ conectado e publicando pelo app novo |
+| Ícone do app | ❌ pendente — arrastar `public/app-icon.png` (1024×1024) |
+| Verificação de negócio (Master Sites) | ❌ pendente — exige documentos da empresa |
 | Screencast | ❌ pendente — exige gravar o fluxo funcionando |
+
+Dados da empresa já cadastrados no portfólio Master Sites: razão social
+`51.226.861 ADRIANO RODRIGO NUNES DEVEQUI`, CNPJ `51.226.861/0001-23`,
+endereço em Londrina/PR e site `https://mastersites.com.br`. Falta só o
+complemento do endereço, que é campo opcional.
 
 ## Bloqueios que dependem de você
 
