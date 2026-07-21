@@ -71,14 +71,28 @@ export function getTokenStatus(
  * Falls back to the legacy INSTAGRAM_* env vars when the profile has none
  * (so the migrated default profile keeps working without re-entering them).
  */
-export function getIgCreds(p: Pick<Profile, "igUserId" | "accessToken">): {
+export function getIgCreds(p: Pick<Profile, "igUserId" | "accessToken" | "authProvider">): {
     igUserId: string;
     accessToken: string;
+    authProvider: string;
 } {
+    // Env credentials are legacy Facebook Page tokens, so falling back to them
+    // also means falling back to the Facebook Graph host.
+    const usingProfileToken = !!p.accessToken;
     return {
         igUserId: p.igUserId || process.env.INSTAGRAM_USER_ID || "",
         accessToken: p.accessToken || process.env.INSTAGRAM_ACCESS_TOKEN || "",
+        authProvider: usingProfileToken ? p.authProvider : "facebook",
     };
+}
+
+/**
+ * Guesses which API a manually pasted token belongs to. Instagram user tokens
+ * (Instagram Login) start with "IG"; Facebook Page/user tokens start with "EAA".
+ * Only used for hand-entered tokens — the OAuth flows set this explicitly.
+ */
+export function detectAuthProvider(token: string): "facebook" | "instagram" {
+    return token.startsWith("IG") ? "instagram" : "facebook";
 }
 
 // ---------------------------------------------------------------------------

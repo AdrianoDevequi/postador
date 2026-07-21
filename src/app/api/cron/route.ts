@@ -6,6 +6,7 @@ import { generateImageUrl } from "@/lib/image";
 import { postToInstagram } from "@/lib/instagram";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { profileToBrand, getIgCreds, isScheduledDue } from "@/lib/profile";
+import { refreshIgToken } from "@/lib/instagram-oauth";
 import type { Profile } from "@prisma/client";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
@@ -85,6 +86,34 @@ async function processProfile(profile: Profile, baseUrl: string, draftOnly = fal
     return { profileId: profile.id, profileName: profile.name, postId: post.id, status: "DRAFT" };
 }
 
+/**
+ * Instagram Login tokens live 60 days and can be extended indefinitely, but only
+ * while still valid — so we top them up well before expiry on every cron poll.
+ * Failures are logged and ignored; the profile's token stays usable until it
+ * actually expires, and the panel already warns the user in that case.
+ */
+async function refreshExpiringIgTokens(now: Date) {
+    const soon = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000);
+    const stale = await prisma.profile.findMany({
+        where: { authProvider: "instagram", tokenExpiresAt: { lt: soon } },
+        select: { id: true, name: true, accessToken: true },
+    });
+
+    for (const p of stale) {
+        if (!p.accessToken) continue;
+        try {
+            const { token, expiresAt } = await refreshIgToken(p.accessToken);
+            await prisma.profile.update({
+                where: { id: p.id },
+                data: { accessToken: token, tokenExpiresAt: expiresAt },
+            });
+            console.log(`[${p.name}] Token do Instagram renovado`);
+        } catch (e: any) {
+            console.error(`[${p.name}] Falha ao renovar token:`, e.response?.data || e.message);
+        }
+    }
+}
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
@@ -114,6 +143,10 @@ export async function GET(request: Request) {
         // - force=true (manual "run now all")  → every active profile, ignoring schedule
         // - otherwise (scheduled poll)         → active profiles whose slot is due now
         const now = new Date();
+
+        // Only on scheduled polls — manual triggers shouldn't pay for this.
+        if (isCron && !profileIdParam) await refreshExpiringIgTokens(now);
+
         let profiles: Profile[];
         if (profileIdParam) {
             // A logged-in user may only trigger their own profiles.

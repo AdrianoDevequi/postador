@@ -1,10 +1,18 @@
 import axios from "axios";
 
 const BASE_URL = "https://graph.facebook.com/v22.0";
+const IG_BASE_URL = "https://graph.instagram.com/v23.0";
 
 export interface IgCredentials {
     igUserId: string;
     accessToken: string;
+    /** "instagram" tokens (Instagram Login) talk to graph.instagram.com instead. */
+    authProvider?: string;
+}
+
+/** The Graph host that accepts this profile's token. */
+function graphBase(authProvider?: string): string {
+    return authProvider === "instagram" ? IG_BASE_URL : BASE_URL;
 }
 
 /**
@@ -37,6 +45,7 @@ export async function postToInstagram(
 ): Promise<string> {
     const igUserId = creds?.igUserId || process.env.INSTAGRAM_USER_ID;
     const accessToken = creds?.accessToken || process.env.INSTAGRAM_ACCESS_TOKEN;
+    const base = graphBase(creds?.authProvider);
 
     if (!igUserId || !accessToken) {
         throw new Error("Instagram credentials not configured");
@@ -44,7 +53,7 @@ export async function postToInstagram(
 
     try {
         // Step 1: Create Media Container
-        const containerResponse = await axios.post(`${BASE_URL}/${igUserId}/media`, null, {
+        const containerResponse = await axios.post(`${base}/${igUserId}/media`, null, {
             params: {
                 image_url: imageUrl,
                 caption: caption,
@@ -55,7 +64,7 @@ export async function postToInstagram(
         const creationId = containerResponse.data.id;
 
         // Step 2: Publish Media
-        const publishResponse = await axios.post(`${BASE_URL}/${igUserId}/media_publish`, null, {
+        const publishResponse = await axios.post(`${base}/${igUserId}/media_publish`, null, {
             params: {
                 creation_id: creationId,
                 access_token: accessToken,

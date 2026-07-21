@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { fetchTokenExpiry } from "@/lib/instagram";
-import type { DiscoveredAccount } from "@/lib/facebook-oauth";
+import type { DiscoveredAccount } from "@/lib/connected-account";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
 
 export const OAUTH_STATE_COOKIE = "ig_oauth_state";
 export const OAUTH_PENDING_COOKIE = "ig_connect_pending";
+export const IG_STATE_COOKIE = "ig_login_state";
 
 /** Returns the signed-in user id, or throws. */
 export async function requireAdmin(): Promise<number> {
@@ -26,6 +27,17 @@ export function callbackUri(origin: string): string {
 }
 
 /**
+ * Redirect URI for the Instagram Login flow. Registered separately in the app
+ * dashboard (Instagram → API setup → OAuth redirect URIs) and, unlike the
+ * Facebook one, Instagram requires it to be HTTPS — plain http://localhost is
+ * rejected, so local testing needs a tunnel with BASE_URL pointed at it.
+ */
+export function igCallbackUri(origin: string): string {
+    const base = process.env.BASE_URL || origin;
+    return `${base.replace(/\/$/, "")}/api/auth/instagram-login/callback`;
+}
+
+/**
  * Saves a discovered Instagram account onto a profile. When `profileId` is null
  * a new profile is created named after the Instagram handle. Returns the profile id.
  */
@@ -34,15 +46,20 @@ export async function persistConnectedAccount(
     account: DiscoveredAccount,
     userId: number
 ): Promise<number> {
-    // Page tokens from a long-lived user token don't expire; debug_token returns
-    // expires_at = 0 -> null, which we store as "unknown/never" expiry.
-    const tokenExpiresAt = await fetchTokenExpiry(account.accessToken);
+    // Instagram Login tells us the expiry up front (60 days). For Page tokens we
+    // ask debug_token; those don't expire, so it returns expires_at = 0 -> null,
+    // which we store as "unknown/never" expiry.
+    const tokenExpiresAt =
+        account.expiresAt !== undefined
+            ? account.expiresAt
+            : await fetchTokenExpiry(account.accessToken);
 
     const data = {
         igUserId: account.igUserId,
         igUsername: account.igUsername || null,
         accessToken: account.accessToken,
         tokenExpiresAt,
+        authProvider: account.authProvider,
     };
 
     if (profileId) {

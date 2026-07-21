@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { postToInstagram, fetchTokenExpiry } from "@/lib/instagram";
-import { getIgCreds } from "@/lib/profile";
+import { getIgCreds, detectAuthProvider } from "@/lib/profile";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
 import { deleteImageFromFtp } from "@/lib/ftp";
 import { persistConnectedAccount, OAUTH_PENDING_COOKIE } from "@/lib/connect";
@@ -89,9 +89,10 @@ export async function createProfile(formData: FormData) {
 
     const data = parseProfileForm(formData);
     const tokenExpiresAt = data.accessToken ? await resolveTokenExpiry(data.accessToken) : null;
+    const authProvider = detectAuthProvider(data.accessToken);
     // Initialize the schedule cursor to now so only future slots fire.
     const profile = await prisma.profile.create({
-        data: { ...data, userId: user.id, tokenExpiresAt, lastScheduledRunAt: new Date() },
+        data: { ...data, authProvider, userId: user.id, tokenExpiresAt, lastScheduledRunAt: new Date() },
     });
 
     revalidatePath("/");
@@ -114,9 +115,13 @@ export async function updateProfile(formData: FormData) {
         void accessToken;
         await prisma.profile.update({ where: { id }, data: { ...rest, lastScheduledRunAt } });
     } else {
-        // New token provided → refresh its expiry from the Graph API
+        // New token provided → refresh its expiry and re-detect which API it uses
         const tokenExpiresAt = await resolveTokenExpiry(data.accessToken);
-        await prisma.profile.update({ where: { id }, data: { ...data, tokenExpiresAt, lastScheduledRunAt } });
+        const authProvider = detectAuthProvider(data.accessToken);
+        await prisma.profile.update({
+            where: { id },
+            data: { ...data, authProvider, tokenExpiresAt, lastScheduledRunAt },
+        });
     }
 
     revalidatePath("/");

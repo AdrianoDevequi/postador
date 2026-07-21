@@ -2,7 +2,8 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { confirmConnectedAccount } from "../actions";
 import { OAUTH_PENDING_COOKIE } from "@/lib/connect";
-import { listInstagramAccounts, type DiscoveredAccount } from "@/lib/facebook-oauth";
+import { listInstagramAccounts } from "@/lib/facebook-oauth";
+import type { DiscoveredAccount } from "@/lib/connected-account";
 
 export const dynamic = "force-dynamic";
 

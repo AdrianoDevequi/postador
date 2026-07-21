@@ -1,4 +1,5 @@
 import axios from "axios";
+import type { DiscoveredAccount } from "@/lib/connected-account";
 
 const GRAPH = "https://graph.facebook.com/v22.0";
 const DIALOG = "https://www.facebook.com/v22.0/dialog/oauth";
@@ -19,14 +20,6 @@ export const FB_SCOPES = [
 
 export function facebookConfigured(): boolean {
     return !!(process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET);
-}
-
-export interface DiscoveredAccount {
-    igUserId: string;
-    igUsername: string;
-    /** Long-lived Page access token — used to publish to this IG account. */
-    accessToken: string;
-    pageName: string;
 }
 
 /** Builds the Facebook login URL the admin is redirected to. */
@@ -99,6 +92,7 @@ export async function listInstagramAccounts(userToken: string): Promise<Discover
                     igUsername: ig.username || "",
                     accessToken: page.access_token,
                     pageName: page.name || "",
+                    authProvider: "facebook",
                 });
             }
         }

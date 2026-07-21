@@ -39,6 +39,11 @@ model Profile {
   accessToken    String    @default("") @db.Text
   tokenExpiresAt DateTime?
 
+  // Which API the accessToken belongs to — decides the Graph host used when
+  // publishing. "instagram" = Instagram Login (graph.instagram.com),
+  // "facebook" = Page token via Facebook Login (graph.facebook.com, legacy).
+  authProvider   String    @default("facebook")
+
   // Content
   topics      String  @db.Text @default("Technology")
 
