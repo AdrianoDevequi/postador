@@ -8,8 +8,11 @@ export const OAUTH_STATE_COOKIE = "ig_oauth_state";
 export const OAUTH_PENDING_COOKIE = "ig_connect_pending";
 export const IG_STATE_COOKIE = "ig_login_state";
 
-/** Returns the signed-in user id, or throws. */
-export async function requireAdmin(): Promise<number> {
+/**
+ * Returns the signed-in user id, or throws. Note this is only "is there a
+ * session" — it says nothing about User.isAdmin, which gates /admin.
+ */
+export async function requireSession(): Promise<number> {
     const store = await cookies();
     const userId = await verifySessionToken(store.get(SESSION_COOKIE)?.value);
     if (!userId) throw new Error("Unauthorized");

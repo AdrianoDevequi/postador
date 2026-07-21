@@ -1,18 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { buildAuthUrl, facebookConfigured } from "@/lib/facebook-oauth";
-import { requireAdmin, callbackUri, OAUTH_STATE_COOKIE } from "@/lib/connect";
+import { callbackUri, OAUTH_STATE_COOKIE } from "@/lib/connect";
+import { getCurrentUser } from "@/lib/auth";
+import { getAccessState } from "@/lib/access";
 
 /**
- * Starts the "Connect with Instagram" flow: verifies the admin session,
- * stores an anti-CSRF state (plus the target profile id) in an httpOnly
- * cookie, and redirects to Facebook's OAuth dialog.
+ * Starts the legacy "Connect via Facebook" flow: verifies the session, stores
+ * an anti-CSRF state (plus the target profile id) in an httpOnly cookie, and
+ * redirects to Facebook's OAuth dialog.
  */
 export async function GET(req: NextRequest) {
-    try {
-        await requireAdmin();
-    } catch {
+    const user = await getCurrentUser();
+    if (!user) {
         return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    // Gated like the Instagram Login route: the same unpublished-app restriction
+    // applies here, so letting someone in by URL only buys them a worse error.
+    const { allowed } = await getAccessState(user);
+    if (!allowed) {
+        return NextResponse.redirect(
+            new URL("/?connect_error=Acesso+ainda+n%C3%A3o+liberado+para+esta+conta.", req.url)
+        );
     }
 
     if (!facebookConfigured()) {

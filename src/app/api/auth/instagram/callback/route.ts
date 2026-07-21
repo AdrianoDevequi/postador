@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserTokenFromCode, listInstagramAccounts } from "@/lib/facebook-oauth";
 import {
-    requireAdmin,
+    requireSession,
     callbackUri,
     persistConnectedAccount,
     OAUTH_STATE_COOKIE,
@@ -24,7 +24,7 @@ function errorRedirect(req: NextRequest, msg: string) {
 export async function GET(req: NextRequest) {
     let userId: number;
     try {
-        userId = await requireAdmin();
+        userId = await requireSession();
     } catch {
         return NextResponse.redirect(new URL("/login", req.url));
     }
