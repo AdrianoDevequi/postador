@@ -115,6 +115,12 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                     </p>
                 </div>
 
+                {isEdit && profile?.igUserId && (
+                    <p className="text-sm text-success font-medium">
+                        ✓ Conectado como @{profile.igUsername || profile.igUserId}
+                    </p>
+                )}
+
                 <p className="text-xs text-muted -mt-1">
                     Sua conta é vinculada a uma Página do Facebook?{" "}
                     <a
@@ -123,40 +129,49 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                     >
                         Conectar via Facebook
                     </a>{" "}
-                    (fluxo antigo). Ou informe ID e token manualmente abaixo.
+                    (fluxo antigo).
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label className={LABEL}>
-                            Instagram Business Account ID
-                            <HelpTip>
-                                O ID numérico (começa com <span className="font-mono">17841...</span>) da sua conta Instagram Business, vinculada a uma Página do Facebook. Pegue no{" "}
-                                <a href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noopener noreferrer" className="underline text-primary-light">Graph API Explorer</a>.
-                            </HelpTip>
-                        </label>
-                        <input type="text" name="igUserId" defaultValue={profile?.igUserId || ""} placeholder="17841400000000000" className={`${INPUT} font-mono`} />
-                    </div>
-                    <div>
-                        <label className={LABEL}>@usuário (opcional)</label>
-                        <input type="text" name="igUsername" defaultValue={profile?.igUsername || ""} placeholder="minhaempresa" className={INPUT} />
-                    </div>
-                </div>
+                {/* Escape hatch for when OAuth fails or a token has to be pasted by
+                    hand. Collapsed by default — connecting via the button above
+                    fills all of it in, so most users never need to open this. */}
+                <details className="group border border-line rounded-lg">
+                    <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-muted hover:text-ink">
+                        Configuração manual (avançado)
+                    </summary>
+                    <div className="px-3 pb-3 pt-1 space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className={LABEL}>
+                                    Instagram Business Account ID
+                                    <HelpTip>
+                                        O ID numérico (começa com <span className="font-mono">17841...</span>) da sua conta Instagram Business. Preenchido automaticamente ao conectar.
+                                    </HelpTip>
+                                </label>
+                                <input type="text" name="igUserId" defaultValue={profile?.igUserId || ""} placeholder="17841400000000000" className={`${INPUT} font-mono`} />
+                            </div>
+                            <div>
+                                <label className={LABEL}>@usuário (opcional)</label>
+                                <input type="text" name="igUsername" defaultValue={profile?.igUsername || ""} placeholder="minhaempresa" className={INPUT} />
+                            </div>
+                        </div>
 
-                <div>
-                    <label className={LABEL}>
-                        Access Token (long-lived)
-                        {isEdit && profile?.accessToken && <span className="text-success font-normal"> — já salvo (deixe vazio para manter)</span>}
-                    </label>
-                    <input
-                        type="password"
-                        name="accessToken"
-                        defaultValue=""
-                        placeholder={isEdit && profile?.accessToken ? "••••••••••••••••" : "EAAG..."}
-                        className={`${INPUT} font-mono`}
-                    />
-                    <p className="text-xs text-muted mt-1">Deixe ID e token vazios para usar as credenciais padrão do ambiente (INSTAGRAM_*).</p>
-                </div>
+                        <div>
+                            <label className={LABEL}>
+                                Access Token (long-lived)
+                                {isEdit && profile?.accessToken && <span className="text-success font-normal"> — já salvo (deixe vazio para manter)</span>}
+                            </label>
+                            <input
+                                type="password"
+                                name="accessToken"
+                                defaultValue=""
+                                placeholder={isEdit && profile?.accessToken ? "••••••••••••••••" : "IGAA... ou EAAG..."}
+                                className={`${INPUT} font-mono`}
+                            />
+                            <p className="text-xs text-muted mt-1">Deixe ID e token vazios para usar as credenciais padrão do ambiente (INSTAGRAM_*).</p>
+                        </div>
+                    </div>
+                </details>
             </Section>
 
             {/* Conteúdo */}
