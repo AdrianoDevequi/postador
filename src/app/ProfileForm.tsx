@@ -89,12 +89,15 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
         // key remounts the whole form when switching profiles, so uncontrolled
         // inputs and client components (palette, schedule) reset to THIS profile's
         // data instead of keeping the previously viewed profile's values.
-        <form key={isEdit ? profile.id : "new"} action={action} className="space-y-6">
+        // autoComplete="off": the browser reads this as a login form (a text field
+        // followed by a password one) and fills the profile name with the user's
+        // email and the token with a saved password.
+        <form key={isEdit ? profile.id : "new"} action={action} autoComplete="off" className="space-y-6">
             {isEdit && <input type="hidden" name="id" value={profile.id} />}
 
             <div>
                 <label className={LABEL}>Nome do perfil (interno)</label>
-                <input type="text" name="name" defaultValue={profile?.name || ""} placeholder="Ex: Jupiter Sites" required className={INPUT} />
+                <input type="text" name="name" defaultValue={profile?.name || ""} placeholder="Ex: Jupiter Sites" required autoComplete="off" className={INPUT} />
             </div>
 
             {/* Instagram */}
@@ -148,11 +151,11 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                                         O ID numérico (começa com <span className="font-mono">17841...</span>) da sua conta Instagram Business. Preenchido automaticamente ao conectar.
                                     </HelpTip>
                                 </label>
-                                <input type="text" name="igUserId" defaultValue={profile?.igUserId || ""} placeholder="17841400000000000" className={`${INPUT} font-mono`} />
+                                <input type="text" name="igUserId" defaultValue={profile?.igUserId || ""} placeholder="17841400000000000" autoComplete="off" className={`${INPUT} font-mono`} />
                             </div>
                             <div>
                                 <label className={LABEL}>@usuário (opcional)</label>
-                                <input type="text" name="igUsername" defaultValue={profile?.igUsername || ""} placeholder="minhaempresa" className={INPUT} />
+                                <input type="text" name="igUsername" defaultValue={profile?.igUsername || ""} placeholder="minhaempresa" autoComplete="off" className={INPUT} />
                             </div>
                         </div>
 
@@ -165,6 +168,9 @@ export function ProfileForm({ profile }: { profile?: Profile }) {
                                 type="password"
                                 name="accessToken"
                                 defaultValue=""
+                                // "new-password" is the one value Chrome honours here;
+                                // plain "off" still triggers the password manager.
+                                autoComplete="new-password"
                                 placeholder={isEdit && profile?.accessToken ? "••••••••••••••••" : "IGAA... ou EAAG..."}
                                 className={`${INPUT} font-mono`}
                             />
