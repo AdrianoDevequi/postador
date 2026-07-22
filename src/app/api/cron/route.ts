@@ -55,7 +55,7 @@ async function processProfile(
             imageUrl = await prepareUploadedImage(uploaded.buffer, brand);
         } else {
             console.log(`[${profile.name}] Generating image prompt`);
-            const imagePrompt = await generateImagePrompt(caption, brand);
+            const imagePrompt = await generateImagePrompt(caption, brand, uploaded?.mode === "reference");
 
             imageUrl = await generateImageUrl(imagePrompt, brand, uploaded?.buffer);
         }

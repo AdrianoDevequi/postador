@@ -122,7 +122,11 @@ function buildDesignBlock(brand: BrandContext): string {
   return block;
 }
 
-export async function generateImagePrompt(captionText: string, brand: BrandContext = {}): Promise<string> {
+export async function generateImagePrompt(
+  captionText: string,
+  brand: BrandContext = {},
+  hasReference = false
+): Promise<string> {
   try {
     const brandName = brand.brand_name || "the brand";
     const palette = (brand.brand_palette || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -143,7 +147,9 @@ Brand: ${brandName}. Colors: ${colors}. Style: ${style}.${description ? ` About:
 
 The prompt must describe:
 - A 4:5 portrait format Instagram post graphic (taller than wide, like a phone screen)
-- A relevant background photo or scene related to the caption topic
+${hasReference
+    ? "- The image model will receive the user's own photo as the base — the prompt must say the design KEEPS that photo as the full-bleed background (same scene, subject and mood) and only ADDS the overlay and text on top of it. Do NOT describe a new scene."
+    : "- A relevant background photo or scene related to the caption topic"}
 - A semi-transparent colored overlay using the brand colors
 ${textRule}
 - The background image/scene must fill the entire canvas edge-to-edge (full bleed, no borders or frames)

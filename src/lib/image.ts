@@ -89,21 +89,42 @@ async function generateWithOpenAI(prompt: string, brand: BrandContext = {}, refe
 
     if (!OPENAI_API_KEY) return null;
     try {
-        let res;
+        let res = null;
         if (reference) {
             // Com imagem de referência → endpoint de edição, que usa a imagem
-            // enviada como base/inspiração para a arte gerada.
-            console.log(`[image] Gerando imagem com gpt-image-2 (com referência): "${fullPrompt}"`);
-            const form = new FormData();
-            form.append("model", "gpt-image-2");
-            form.append("prompt", `${fullPrompt}. Use the provided image as the visual base and inspiration for the design.`);
-            form.append("n", "1");
-            form.append("size", "1024x1536");
-            form.append("image", new Blob([new Uint8Array(reference)]), "reference.png");
-            res = await axios.post("https://api.openai.com/v1/images/edits", form, {
-                headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
-            });
-        } else {
+            // enviada como base da arte gerada.
+            try {
+                console.log(`[image] Gerando imagem com gpt-image-2 (com referência): "${fullPrompt}"`);
+                // Normaliza para PNG no tamanho do canvas — a API exige mime
+                // conhecido e a imagem já chega no enquadramento certo.
+                const refPng = await sharp(reference)
+                    .resize(1024, 1536, { fit: "cover", position: "attention" })
+                    .png()
+                    .toBuffer();
+                const form = new FormData();
+                form.append("model", "gpt-image-2");
+                form.append(
+                    "prompt",
+                    `${fullPrompt}. IMPORTANT: keep the provided photo as the full-bleed background of the design — preserve its scene, subject and mood; add the colored overlay and text ON TOP of it, do NOT replace it with a different scene.`
+                );
+                form.append("n", "1");
+                form.append("size", "1024x1536");
+                form.append("image", new Blob([new Uint8Array(refPng)], { type: "image/png" }), "reference.png");
+                res = await axios.post("https://api.openai.com/v1/images/edits", form, {
+                    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+                });
+            } catch (e: unknown) {
+                // Falhou com referência → loga e cai na geração normal, que ainda
+                // é melhor do que foto de banco sem arte.
+                if (axios.isAxiosError(e)) {
+                    console.error("[image] images/edits falhou:", e.response?.status, JSON.stringify(e.response?.data));
+                } else {
+                    console.error("[image] images/edits falhou:", e);
+                }
+                res = null;
+            }
+        }
+        if (!res) {
             console.log(`[image] Gerando imagem com gpt-image-2: "${fullPrompt}"`);
             res = await axios.post(
                 "https://api.openai.com/v1/images/generations",

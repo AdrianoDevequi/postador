@@ -108,66 +108,59 @@ export function ManualTrigger({ profileId, missingFields = [] }: { profileId: nu
                             </p>
                         </div>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {/* Imagem opcional: referência para a IA ou imagem final do post */}
-                            <div className="border border-line rounded-lg p-4 space-y-3">
-                                <div className="flex items-center justify-between gap-2 flex-wrap">
-                                    <p className="text-sm font-medium text-ink">Imagem (opcional)</p>
-                                    {file && (
-                                        <button onClick={clearFile} className="text-xs text-danger underline">
-                                            Remover imagem
-                                        </button>
+                            {!file ? (
+                                <label className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-primary cursor-pointer transition-colors">
+                                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                                    </svg>
+                                    <span className="underline underline-offset-2">Anexar imagem (opcional)</span>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="hidden"
+                                        onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                                    />
+                                </label>
+                            ) : (
+                                <div className="flex gap-3 items-start bg-slate-50 border border-line rounded-lg p-3">
+                                    {preview && (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={preview} alt="Prévia da imagem" className="w-14 h-[70px] object-cover rounded-md border border-line" />
                                     )}
-                                </div>
-                                {!file ? (
-                                    <label className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-line rounded-lg p-5 cursor-pointer hover:border-primary hover:bg-primary-light/40 transition-colors">
-                                        <span className="text-sm text-muted">Clique para escolher uma imagem</span>
-                                        <span className="text-xs text-muted">JPG, PNG ou WebP — máx. 10MB</span>
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/jpeg,image/png,image/webp"
-                                            className="hidden"
-                                            onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
-                                        />
-                                    </label>
-                                ) : (
-                                    <div className="flex gap-4 items-start">
-                                        {preview && (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={preview} alt="Prévia da imagem" className="w-24 h-30 object-cover rounded-lg border border-line" />
-                                        )}
-                                        <div className="space-y-2 text-sm">
-                                            <label className="flex items-start gap-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name="imageMode"
-                                                    checked={imageMode === "reference"}
-                                                    onChange={() => setImageMode("reference")}
-                                                    className="mt-1"
-                                                />
-                                                <span>
-                                                    <span className="font-medium text-ink">Usar como referência</span>
-                                                    <span className="block text-xs text-muted">A IA cria a arte do post usando sua imagem como base.</span>
-                                                </span>
-                                            </label>
-                                            <label className="flex items-start gap-2 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name="imageMode"
-                                                    checked={imageMode === "final"}
-                                                    onChange={() => setImageMode("final")}
-                                                    className="mt-1"
-                                                />
-                                                <span>
-                                                    <span className="font-medium text-ink">Usar como imagem do post</span>
-                                                    <span className="block text-xs text-muted">Sua imagem é usada como está (ajustada para 4:5, com a logo se ativada). Só a legenda é gerada.</span>
-                                                </span>
-                                            </label>
-                                        </div>
+                                    <div className="space-y-1.5 text-xs flex-1">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="imageMode"
+                                                checked={imageMode === "reference"}
+                                                onChange={() => setImageMode("reference")}
+                                            />
+                                            <span className="text-ink">
+                                                <span className="font-medium">Referência</span>
+                                                <span className="text-muted"> — a IA cria a arte usando sua imagem como base</span>
+                                            </span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="imageMode"
+                                                checked={imageMode === "final"}
+                                                onChange={() => setImageMode("final")}
+                                            />
+                                            <span className="text-ink">
+                                                <span className="font-medium">Imagem do post</span>
+                                                <span className="text-muted"> — usada como está (4:5 + logo); só a legenda é gerada</span>
+                                            </span>
+                                        </label>
+                                        <button onClick={clearFile} className="text-danger underline underline-offset-2">
+                                            Remover
+                                        </button>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                             <button
                                 onClick={handleTrigger}
                                 className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
