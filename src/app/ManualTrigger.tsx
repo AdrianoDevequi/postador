@@ -11,6 +11,9 @@ export function ManualTrigger({ profileId, missingFields = [] }: { profileId: nu
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [imageMode, setImageMode] = useState<"reference" | "final">("reference");
+    // Painel aberto pelo link "Anexar imagem" — mostra as opções de modo ANTES
+    // de escolher o arquivo.
+    const [attachOpen, setAttachOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (f: File | null) => {
@@ -24,6 +27,11 @@ export function ManualTrigger({ profileId, missingFields = [] }: { profileId: nu
     const clearFile = () => {
         handleFileChange(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const closeAttach = () => {
+        clearFile();
+        setAttachOpen(false);
     };
 
     const steps = [
@@ -110,27 +118,26 @@ export function ManualTrigger({ profileId, missingFields = [] }: { profileId: nu
                     ) : (
                         <div className="space-y-3">
                             {/* Imagem opcional: referência para a IA ou imagem final do post */}
-                            {!file ? (
-                                <label className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-primary cursor-pointer transition-colors">
+                            {!attachOpen ? (
+                                <button
+                                    type="button"
+                                    onClick={() => setAttachOpen(true)}
+                                    className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-primary cursor-pointer transition-colors"
+                                >
                                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                                         <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                                     </svg>
                                     <span className="underline underline-offset-2">Anexar imagem (opcional)</span>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        className="hidden"
-                                        onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
-                                    />
-                                </label>
+                                </button>
                             ) : (
-                                <div className="flex gap-3 items-start bg-slate-50 border border-line rounded-lg p-3">
-                                    {preview && (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={preview} alt="Prévia da imagem" className="w-14 h-[70px] object-cover rounded-md border border-line" />
-                                    )}
-                                    <div className="space-y-1.5 text-xs flex-1">
+                                <div className="bg-slate-50 border border-line rounded-lg p-3 space-y-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-xs font-semibold text-ink">Como usar a imagem?</p>
+                                        <button onClick={closeAttach} className="text-xs text-muted hover:text-danger underline underline-offset-2">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                    <div className="space-y-1.5 text-xs">
                                         <label className="flex items-center gap-2 cursor-pointer">
                                             <input
                                                 type="radio"
@@ -155,9 +162,25 @@ export function ManualTrigger({ profileId, missingFields = [] }: { profileId: nu
                                                 <span className="text-muted"> — usada como está (4:5 + logo); só a legenda é gerada</span>
                                             </span>
                                         </label>
-                                        <button onClick={clearFile} className="text-danger underline underline-offset-2">
-                                            Remover
-                                        </button>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <label className="inline-flex items-center gap-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md px-2.5 py-1.5 cursor-pointer hover:bg-primary-light transition-colors">
+                                            {file ? "Trocar imagem" : "Escolher imagem"}
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/webp"
+                                                className="hidden"
+                                                onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                                            />
+                                        </label>
+                                        {preview ? (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={preview} alt="Prévia da imagem" className="w-10 h-[50px] object-cover rounded-md border border-line" />
+                                        ) : (
+                                            <span className="text-xs text-muted">JPG, PNG ou WebP — máx. 10MB</span>
+                                        )}
+                                        {file && <span className="text-xs text-muted truncate max-w-[160px]">{file.name}</span>}
                                     </div>
                                 </div>
                             )}
