@@ -66,6 +66,44 @@ function Section({ title, description, children }: { title: string; description?
     );
 }
 
+function LogoUpload({
+    label,
+    name,
+    removeName,
+    current,
+    previewBg,
+}: {
+    label: string;
+    name: string;
+    removeName: string;
+    current?: string | null;
+    previewBg: string;
+}) {
+    return (
+        <div>
+            <label className="block text-xs text-muted mb-1">{label}</label>
+            {current && (
+                <div className="flex items-center gap-2 mb-2">
+                    <span className={`inline-flex items-center justify-center rounded-md border border-line p-1.5 ${previewBg}`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={current} alt={label} className="h-8 max-w-[110px] object-contain" />
+                    </span>
+                    <label className="flex items-center gap-1.5 text-xs text-muted cursor-pointer">
+                        <input type="checkbox" name={removeName} value="true" className="w-3.5 h-3.5 rounded border-line" />
+                        Remover
+                    </label>
+                </div>
+            )}
+            <input
+                type="file"
+                name={name}
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="block w-full text-xs text-muted file:mr-2 file:rounded-md file:border-0 file:bg-primary-light file:px-2.5 file:py-1.5 file:text-xs file:font-semibold file:text-primary file:cursor-pointer cursor-pointer"
+            />
+        </div>
+    );
+}
+
 function HelpTip({ children }: { children: React.ReactNode }) {
     return (
         <span className="relative inline-flex group align-middle ml-1.5">
@@ -264,19 +302,29 @@ export function ProfileForm({ profile, canConnect = true }: { profile?: Profile;
                         </HelpTip>
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label className="block text-xs text-muted mb-1">Logo clara (fundos escuros)</label>
-                            <input type="url" name="brandLogoUrl" defaultValue={profile?.brandLogoUrl || ""} placeholder="https://..." className={INPUT} />
-                        </div>
-                        <div>
-                            <label className="block text-xs text-muted mb-1">Logo escura (fundos claros)</label>
-                            <input type="url" name="brandLogoDarkUrl" defaultValue={profile?.brandLogoDarkUrl || ""} placeholder="https://..." className={INPUT} />
-                        </div>
-                        <div>
-                            <label className="block text-xs text-muted mb-1">Ícone da logo</label>
-                            <input type="url" name="brandLogoIconUrl" defaultValue={profile?.brandLogoIconUrl || ""} placeholder="https://..." className={INPUT} />
-                        </div>
+                        <LogoUpload
+                            label="Logo clara (fundos escuros)"
+                            name="logoLightFile"
+                            removeName="removeLogoLight"
+                            current={profile?.brandLogoUrl}
+                            previewBg="bg-slate-800"
+                        />
+                        <LogoUpload
+                            label="Logo escura (fundos claros)"
+                            name="logoDarkFile"
+                            removeName="removeLogoDark"
+                            current={profile?.brandLogoDarkUrl}
+                            previewBg="bg-white"
+                        />
+                        <LogoUpload
+                            label="Ícone da logo"
+                            name="logoIconFile"
+                            removeName="removeLogoIcon"
+                            current={profile?.brandLogoIconUrl}
+                            previewBg="bg-slate-100"
+                        />
                     </div>
+                    <p className="text-xs text-muted mt-2">PNG com fundo transparente fica melhor. Máx. 5MB por arquivo.</p>
                     <label className="flex items-center gap-3 cursor-pointer mt-3">
                         <input type="checkbox" name="useLogo" value="true" defaultChecked={profile?.useLogo ?? false} className="w-4 h-4 rounded border-line text-primary" />
                         <span className="text-sm font-medium text-ink">Adicionar logo na imagem</span>

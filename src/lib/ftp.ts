@@ -12,7 +12,7 @@ function isFtpUrl(url: string) {
     return url.startsWith(FTP_BASE_URL);
 }
 
-export async function uploadImageToFtp(base64DataUrl: string): Promise<string | null> {
+export async function uploadBufferToFtp(buffer: Buffer, ext = "jpg"): Promise<string | null> {
     if (!FTP_USER || !FTP_PASSWORD) return null;
 
     const client = new ftp.Client();
@@ -26,9 +26,7 @@ export async function uploadImageToFtp(base64DataUrl: string): Promise<string | 
             secure: false,
         });
 
-        const base64 = base64DataUrl.split(",")[1];
-        const buffer = Buffer.from(base64, "base64");
-        const filename = `${crypto.randomUUID()}.jpg`;
+        const filename = `${crypto.randomUUID()}.${ext}`;
 
         await client.ensureDir(FTP_REMOTE_DIR);
         await client.uploadFrom(Readable.from(buffer), `${FTP_REMOTE_DIR}/${filename}`);
@@ -42,6 +40,11 @@ export async function uploadImageToFtp(base64DataUrl: string): Promise<string | 
     } finally {
         client.close();
     }
+}
+
+export async function uploadImageToFtp(base64DataUrl: string): Promise<string | null> {
+    const base64 = base64DataUrl.split(",")[1];
+    return uploadBufferToFtp(Buffer.from(base64, "base64"), "jpg");
 }
 
 export function isFtpImageUrl(url: string) {
