@@ -75,7 +75,12 @@ model Profile {
   brandDescription String? @db.Text
   brandColors      String?
   brandStyle       String?
+  // Logo variants: brandLogoUrl is the light version (for dark backgrounds),
+  // brandLogoDarkUrl the dark one (for light backgrounds), brandLogoIconUrl the
+  // square icon. image.ts picks by measuring the corner brightness.
   brandLogoUrl     String? @db.Text
+  brandLogoDarkUrl String? @db.Text
+  brandLogoIconUrl String? @db.Text
   brandExtra       String? @db.Text
   linkUrl          String?
   useLogo          Boolean @default(false)

@@ -12,6 +12,8 @@ export function profileToBrand(p: Profile): Record<string, string> {
         brand_colors: p.brandColors ?? "",
         brand_style: p.brandStyle ?? "",
         brand_logo_url: p.brandLogoUrl ?? "",
+        brand_logo_dark_url: p.brandLogoDarkUrl ?? "",
+        brand_logo_icon_url: p.brandLogoIconUrl ?? "",
         brand_extra: p.brandExtra ?? "",
         brand_link: p.linkUrl ?? "",
         brand_use_logo: p.useLogo ? "true" : "false",
@@ -28,6 +30,20 @@ export function profileToBrand(p: Profile): Record<string, string> {
         brand_palette: p.brandPalette ?? "",
         brand_alternate: p.alternateStyles ? "true" : "false",
     };
+}
+
+/**
+ * Brand-identity items required before a profile may generate posts (manually
+ * or via schedule). Without them the AI has no idea what the business is and
+ * produces generic content — so generation stays locked until they're filled.
+ */
+export function missingBrandFields(
+    p: Pick<Profile, "brandName" | "brandDescription">
+): string[] {
+    const missing: string[] = [];
+    if (!p.brandName?.trim()) missing.push("Nome da marca");
+    if (!p.brandDescription?.trim()) missing.push("Descrição da marca");
+    return missing;
 }
 
 export type TokenState = "env" | "unknown" | "ok" | "warning" | "expired";

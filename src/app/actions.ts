@@ -50,6 +50,8 @@ function parseProfileForm(formData: FormData) {
         brandColors: str("brandColors") || null,
         brandStyle: str("brandStyle") || null,
         brandLogoUrl: str("brandLogoUrl") || null,
+        brandLogoDarkUrl: str("brandLogoDarkUrl") || null,
+        brandLogoIconUrl: str("brandLogoIconUrl") || null,
         brandExtra: str("brandExtra") || null,
         linkUrl: str("linkUrl") || null,
         designFontStyle: str("designFontStyle") || null,

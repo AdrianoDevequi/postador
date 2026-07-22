@@ -3,7 +3,7 @@ import type { Profile } from "@prisma/client";
 import { Chips, csvToSet, type ChipOption } from "./ui/Chips";
 import { ColorPalette } from "./ui/ColorPalette";
 import { SchedulePicker } from "./ui/SchedulePicker";
-import { parseSchedule } from "@/lib/profile";
+import { parseSchedule, missingBrandFields } from "@/lib/profile";
 
 const BRAND_STYLES: ChipOption[] = [
     { value: "modern and professional", label: "Moderno" },
@@ -83,6 +83,9 @@ export function ProfileForm({ profile, canConnect = true }: { profile?: Profile;
     const isEdit = !!profile;
     const action = isEdit ? updateProfile : createProfile;
     const schedule = parseSchedule(profile ?? { scheduleDays: "", scheduleTimes: "" });
+    // Generation (manual and scheduled) is locked until these are filled — the
+    // cron skips incomplete profiles, so warn right where the schedule is set.
+    const missingBrand = missingBrandFields(profile ?? { brandName: null, brandDescription: null });
     const palette = (profile?.brandPalette || "").split(",").map((s) => s.trim()).filter(Boolean);
 
     return (
@@ -223,7 +226,9 @@ export function ProfileForm({ profile, canConnect = true }: { profile?: Profile;
             <Section title="Identidade de marca">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className={LABEL}>Nome da marca</label>
+                        <label className={LABEL}>
+                            Nome da marca <span className="text-danger">*</span>
+                        </label>
                         <input type="text" name="brandName" defaultValue={profile?.brandName || ""} placeholder="Ex: Jupiter Sites" className={INPUT} />
                     </div>
                     <div>
@@ -232,7 +237,13 @@ export function ProfileForm({ profile, canConnect = true }: { profile?: Profile;
                     </div>
                 </div>
                 <div>
-                    <label className={LABEL}>Descrição da marca</label>
+                    <label className={LABEL}>
+                        Descrição da marca <span className="text-danger">*</span>
+                        <HelpTip>
+                            Descreva o que a empresa faz, o que vende e para quem. A IA usa isso para gerar textos e
+                            imagens que fazem sentido para o seu negócio. Obrigatório para gerar ou agendar posts.
+                        </HelpTip>
+                    </label>
                     <textarea name="brandDescription" defaultValue={profile?.brandDescription || ""} rows={2} placeholder="Ex: Agência especializada em criação de sites para pequenas empresas" className={INPUT} />
                 </div>
                 <div>
@@ -244,8 +255,28 @@ export function ProfileForm({ profile, canConnect = true }: { profile?: Profile;
                     <ColorPalette name="brandPalette" defaultColors={palette} />
                 </div>
                 <div>
-                    <label className={LABEL}>URL da logo</label>
-                    <input type="url" name="brandLogoUrl" defaultValue={profile?.brandLogoUrl || ""} placeholder="https://..." className={INPUT} />
+                    <label className={LABEL}>
+                        Logos
+                        <HelpTip>
+                            O sistema mede o brilho do canto da imagem gerada e escolhe automaticamente a versão com
+                            mais contraste: a clara em fundos escuros, a escura em fundos claros. O ícone é usado
+                            quando a versão ideal não está preenchida. Pode preencher só uma — ela será usada sempre.
+                        </HelpTip>
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label className="block text-xs text-muted mb-1">Logo clara (fundos escuros)</label>
+                            <input type="url" name="brandLogoUrl" defaultValue={profile?.brandLogoUrl || ""} placeholder="https://..." className={INPUT} />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-muted mb-1">Logo escura (fundos claros)</label>
+                            <input type="url" name="brandLogoDarkUrl" defaultValue={profile?.brandLogoDarkUrl || ""} placeholder="https://..." className={INPUT} />
+                        </div>
+                        <div>
+                            <label className="block text-xs text-muted mb-1">Ícone da logo</label>
+                            <input type="url" name="brandLogoIconUrl" defaultValue={profile?.brandLogoIconUrl || ""} placeholder="https://..." className={INPUT} />
+                        </div>
+                    </div>
                     <label className="flex items-center gap-3 cursor-pointer mt-3">
                         <input type="checkbox" name="useLogo" value="true" defaultChecked={profile?.useLogo ?? false} className="w-4 h-4 rounded border-line text-primary" />
                         <span className="text-sm font-medium text-ink">Adicionar logo na imagem</span>
@@ -303,6 +334,16 @@ export function ProfileForm({ profile, canConnect = true }: { profile?: Profile;
 
             {/* Agendamento */}
             <Section title="Agendamento" description="Quais dias e horários publicar automaticamente (fuso de Brasília).">
+                {missingBrand.length > 0 && (
+                    <div className="bg-warning-light border-l-4 border-warning rounded-r-lg p-3">
+                        <p className="text-sm font-semibold text-[#a06a12]">
+                            O agendamento só roda depois de preencher: {missingBrand.join(" e ")}
+                        </p>
+                        <p className="text-xs text-[#a06a12]/90 mt-0.5">
+                            Estão na seção Identidade de marca, acima. Sem isso a IA não sabe do que se trata o negócio.
+                        </p>
+                    </div>
+                )}
                 <SchedulePicker defaultDays={schedule.days} defaultTimes={schedule.times} />
                 <div className="flex flex-col gap-3 pt-1 border-t border-line">
                     <label className="flex items-center gap-3 cursor-pointer pt-3">

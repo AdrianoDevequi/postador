@@ -8,7 +8,7 @@ import { PostActions } from "./PostActions";
 import { ProfileForm } from "./ProfileForm";
 import { DeleteProfileButton } from "./ProfileControls";
 import { TokenStatusBadge } from "./TokenStatusBadge";
-import { getTokenStatus, describeSchedule, nextScheduledRun } from "@/lib/profile";
+import { getTokenStatus, describeSchedule, nextScheduledRun, missingBrandFields } from "@/lib/profile";
 import { getAccessState } from "@/lib/access";
 import { AccessRequestCard } from "./AccessRequestCard";
 import { AppShell } from "./ui/AppShell";
@@ -138,8 +138,8 @@ export default async function Home({
           />
         </div>
 
-        {/* Manual generation */}
-        <ManualTrigger profileId={selected.id} />
+        {/* Manual generation — locked until the brand identity is filled in */}
+        <ManualTrigger profileId={selected.id} missingFields={missingBrandFields(selected)} />
 
         {/* Posts */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-line">

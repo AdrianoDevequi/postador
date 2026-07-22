@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { generateCaption, generateImagePrompt } from "@/lib/openai";
-import { generateImageUrl } from "@/lib/image";
+import { generateImageUrl, prepareUploadedImage } from "@/lib/image";
 import { postToInstagram } from "@/lib/instagram";
 import { resolveInstagramImageUrl } from "@/lib/cdn";
-import { profileToBrand, getIgCreds, isScheduledDue } from "@/lib/profile";
+import { profileToBrand, getIgCreds, isScheduledDue, missingBrandFields } from "@/lib/profile";
 import { refreshIgToken } from "@/lib/instagram-oauth";
 import type { Profile } from "@prisma/client";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/session";
@@ -21,7 +21,20 @@ interface ProfileResult {
     error?: string;
 }
 
-async function processProfile(profile: Profile, baseUrl: string, draftOnly = false): Promise<ProfileResult> {
+/** Imagem opcional enviada pelo usuário na geração manual. */
+interface UploadedImage {
+    buffer: Buffer;
+    // "reference" → a IA gera a arte usando a imagem como base;
+    // "final"     → a imagem enviada É a imagem do post (só ajusta 4:5 + logo).
+    mode: "reference" | "final";
+}
+
+async function processProfile(
+    profile: Profile,
+    baseUrl: string,
+    draftOnly = false,
+    uploaded?: UploadedImage
+): Promise<ProfileResult> {
     const brand = profileToBrand(profile);
 
     // Pick a random topic for this profile
@@ -37,10 +50,15 @@ async function processProfile(profile: Profile, baseUrl: string, draftOnly = fal
         console.log(`[${profile.name}] Generating text for topic: ${topic}`);
         caption = await generateCaption(topic, brand);
 
-        console.log(`[${profile.name}] Generating image prompt`);
-        const imagePrompt = await generateImagePrompt(caption, brand);
+        if (uploaded?.mode === "final") {
+            console.log(`[${profile.name}] Usando imagem enviada pelo usuário como imagem do post`);
+            imageUrl = await prepareUploadedImage(uploaded.buffer, brand);
+        } else {
+            console.log(`[${profile.name}] Generating image prompt`);
+            const imagePrompt = await generateImagePrompt(caption, brand);
 
-        imageUrl = await generateImageUrl(imagePrompt, brand);
+            imageUrl = await generateImageUrl(imagePrompt, brand, uploaded?.buffer);
+        }
     } catch (e: any) {
         console.error(`[${profile.name}] Content generation failed:`, e);
         generationError = e.message || "Failed to generate content";
@@ -166,6 +184,35 @@ export async function GET(request: Request) {
             return NextResponse.json({ success: true, skipped: true, message: msg, results: [] });
         }
 
+        // Brand identity gate: without name + description the AI doesn't know
+        // what the business is, so generation stays locked until they're filled.
+        if (profileIdParam) {
+            const missing = missingBrandFields(profiles[0]);
+            if (missing.length) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: `Preencha antes de gerar posts: ${missing.join(" e ")} (seção Identidade de marca, nas configurações do perfil).`,
+                    },
+                    { status: 400 }
+                );
+            }
+        } else {
+            const skipped = profiles.filter((p) => missingBrandFields(p).length > 0);
+            for (const p of skipped) {
+                console.log(`[${p.name}] Pulado: identidade de marca incompleta (${missingBrandFields(p).join(", ")})`);
+            }
+            profiles = profiles.filter((p) => missingBrandFields(p).length === 0);
+            if (profiles.length === 0) {
+                return NextResponse.json({
+                    success: true,
+                    skipped: true,
+                    message: "Perfis agendados estão com a identidade de marca incompleta",
+                    results: [],
+                });
+            }
+        }
+
         const results: ProfileResult[] = [];
         for (const profile of profiles) {
             results.push(await processProfile(profile, baseUrl, draftOnly));
@@ -193,6 +240,67 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: !anyError, results });
     } catch (error: any) {
         console.error("Cron job critically failed:", error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+}
+
+/**
+ * Geração manual com imagem opcional (multipart). Usado pelo painel quando o
+ * usuário anexa uma imagem — como referência para a IA ou como imagem final.
+ * Sempre gera rascunho (draftOnly) e exige sessão de usuário.
+ */
+export async function POST(request: Request) {
+    try {
+        const cookieStore = await cookies();
+        const userId = await verifySessionToken(cookieStore.get(SESSION_COOKIE)?.value);
+        if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+
+        const form = await request.formData();
+        const profileId = Number(form.get("profileId"));
+        if (!profileId) {
+            return NextResponse.json({ success: false, error: "profileId ausente" }, { status: 400 });
+        }
+
+        const profile = await prisma.profile.findFirst({ where: { id: profileId, userId } });
+        if (!profile) {
+            return NextResponse.json({ success: false, error: "Perfil não encontrado" }, { status: 404 });
+        }
+
+        const missing = missingBrandFields(profile);
+        if (missing.length) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: `Preencha antes de gerar posts: ${missing.join(" e ")} (seção Identidade de marca, nas configurações do perfil).`,
+                },
+                { status: 400 }
+            );
+        }
+
+        // Imagem opcional
+        let uploaded: UploadedImage | undefined;
+        const file = form.get("image");
+        if (file instanceof File && file.size > 0) {
+            if (file.size > 10 * 1024 * 1024) {
+                return NextResponse.json({ success: false, error: "Imagem muito grande (máximo 10MB)" }, { status: 400 });
+            }
+            uploaded = {
+                buffer: Buffer.from(await file.arrayBuffer()),
+                mode: form.get("imageMode") === "final" ? "final" : "reference",
+            };
+        }
+
+        const headersList = await headers();
+        const host = headersList.get("host") || "localhost:3000";
+        const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+        const baseUrl = process.env.BASE_URL || `${protocol}://${host}`;
+
+        const r = await processProfile(profile, baseUrl, true, uploaded);
+        const post = r.postId ? await prisma.post.findUnique({ where: { id: r.postId } }) : null;
+        const ok = r.status !== "ERROR";
+        return NextResponse.json({ success: ok, post, error: r.error }, { status: ok ? 200 : 500 });
+    } catch (error: any) {
+        console.error("Manual generation failed:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

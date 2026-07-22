@@ -1,12 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-export function ManualTrigger({ profileId }: { profileId: number }) {
+export function ManualTrigger({ profileId, missingFields = [] }: { profileId: number; missingFields?: string[] }) {
+    const locked = missingFields.length > 0;
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState("");
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState("");
+    const [file, setFile] = useState<File | null>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+    const [imageMode, setImageMode] = useState<"reference" | "final">("reference");
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileChange = (f: File | null) => {
+        setFile(f);
+        setPreview((old) => {
+            if (old) URL.revokeObjectURL(old);
+            return f ? URL.createObjectURL(f) : null;
+        });
+    };
+
+    const clearFile = () => {
+        handleFileChange(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     const steps = [
         "Conectando ao ChatGPT...",
@@ -32,7 +50,17 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
         }, 2500);
 
         try {
-            const response = await fetch(`/api/cron?force=true&draftOnly=true&profileId=${profileId}`);
+            let response: Response;
+            if (file) {
+                // Com imagem anexada → POST multipart (referência ou imagem final)
+                const form = new FormData();
+                form.append("profileId", String(profileId));
+                form.append("image", file);
+                form.append("imageMode", imageMode);
+                response = await fetch("/api/cron", { method: "POST", body: form });
+            } else {
+                response = await fetch(`/api/cron?force=true&draftOnly=true&profileId=${profileId}`);
+            }
             const data = await response.json();
 
             clearInterval(interval);
@@ -70,12 +98,84 @@ export function ManualTrigger({ profileId }: { profileId: number }) {
             {!loading && !result && !error && (
                 <div>
                     <p className="text-muted mb-4">Gere um novo post agora, sem esperar o agendamento.</p>
-                    <button
-                        onClick={handleTrigger}
-                        className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
-                    >
-                        🚀 Gerar novo post
-                    </button>
+                    {locked ? (
+                        <div className="bg-warning-light border-l-4 border-warning rounded-r-lg p-4">
+                            <p className="font-bold text-[#a06a12]">Complete a identidade de marca para liberar</p>
+                            <p className="text-sm text-[#a06a12]/90 mt-0.5">
+                                Preencha {missingFields.join(" e ")} na seção{" "}
+                                <span className="font-semibold">Identidade de marca</span> (Configurações, abaixo) — a IA
+                                usa isso para gerar posts que fazem sentido para o seu negócio.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {/* Imagem opcional: referência para a IA ou imagem final do post */}
+                            <div className="border border-line rounded-lg p-4 space-y-3">
+                                <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <p className="text-sm font-medium text-ink">Imagem (opcional)</p>
+                                    {file && (
+                                        <button onClick={clearFile} className="text-xs text-danger underline">
+                                            Remover imagem
+                                        </button>
+                                    )}
+                                </div>
+                                {!file ? (
+                                    <label className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-line rounded-lg p-5 cursor-pointer hover:border-primary hover:bg-primary-light/40 transition-colors">
+                                        <span className="text-sm text-muted">Clique para escolher uma imagem</span>
+                                        <span className="text-xs text-muted">JPG, PNG ou WebP — máx. 10MB</span>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            className="hidden"
+                                            onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                                        />
+                                    </label>
+                                ) : (
+                                    <div className="flex gap-4 items-start">
+                                        {preview && (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={preview} alt="Prévia da imagem" className="w-24 h-30 object-cover rounded-lg border border-line" />
+                                        )}
+                                        <div className="space-y-2 text-sm">
+                                            <label className="flex items-start gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="imageMode"
+                                                    checked={imageMode === "reference"}
+                                                    onChange={() => setImageMode("reference")}
+                                                    className="mt-1"
+                                                />
+                                                <span>
+                                                    <span className="font-medium text-ink">Usar como referência</span>
+                                                    <span className="block text-xs text-muted">A IA cria a arte do post usando sua imagem como base.</span>
+                                                </span>
+                                            </label>
+                                            <label className="flex items-start gap-2 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="imageMode"
+                                                    checked={imageMode === "final"}
+                                                    onChange={() => setImageMode("final")}
+                                                    className="mt-1"
+                                                />
+                                                <span>
+                                                    <span className="font-medium text-ink">Usar como imagem do post</span>
+                                                    <span className="block text-xs text-muted">Sua imagem é usada como está (ajustada para 4:5, com a logo se ativada). Só a legenda é gerada.</span>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={handleTrigger}
+                                className="w-full sm:w-auto bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                            >
+                                🚀 Gerar novo post
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

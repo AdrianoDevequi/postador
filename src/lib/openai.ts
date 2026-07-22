@@ -64,7 +64,12 @@ export async function generateCaption(topic: string, brand: BrandContext = {}): 
       postTypes[Math.floor(Math.random() * postTypes.length)];
     const brandBlock = buildBrandBlock(brand);
 
-    const prompt = `Haja como um Social Media experiente. O tema central do perfil é "${topic}".
+    // Ground the whole post in what the business actually is, not just the topic.
+    const businessLine = brand.brand_description
+      ? `\n    O perfil pertence ao seguinte negócio: ${brand.brand_description}\n    Tudo o que você escrever deve fazer sentido para esse negócio — fale como ele, para o público dele, sobre os produtos/serviços dele.`
+      : "";
+
+    const prompt = `Haja como um Social Media experiente. O tema central do perfil é "${topic}".${businessLine}
     Hoje, eu preciso que você crie um post do tipo: **${randomType}** (mas relacionado ao tema central de alguma forma).
     Escreva uma legenda de Instagram envolvente e persuasiva em PORTUGUÊS DO BRASIL.
     Use poucos emojis (máximo 3-4 no total, apenas onde agregam valor) e hashtags relevantes. Seja criativo, não repita os mesmos padrões de sempre. Mantenha abaixo de 1800 caracteres.${brandBlock}
